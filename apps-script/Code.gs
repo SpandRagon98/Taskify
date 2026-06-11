@@ -47,32 +47,42 @@ function taskifyOnboard_(payload) {
 
   const lock = LockService.getScriptLock();
   lock.waitLock(10000);
+  let member;
   try {
     const members = taskifyGetMembers_();
-    let member = members.find(function (item) {
+    const existingMember = members.find(function (item) {
       return String(item.email || "").trim().toLowerCase() === email;
     });
 
-    if (!member) {
-      member = {
-        id: Utilities.getUuid(),
-        name: String(payload.name || taskifyNameFromEmail_(email)).trim() || "Member",
-        email: email,
-        role: members.length ? "Member" : "Admin",
-        userId: taskifyNextUserId_(members),
-        password: TASKIFY_COMMON_PASSWORD
-      };
-      members.push(member);
-      taskifySaveMembers_(members);
-    } else {
-      member.password = TASKIFY_COMMON_PASSWORD;
-      taskifySaveMembers_(members);
+    if (existingMember) {
+      return taskifyJson_({
+        success: false,
+        code: "EMAIL_EXISTS",
+        message: "This email already has Taskify access. Please login with your existing credentials or contact admin."
+      });
     }
 
+    member = {
+      id: Utilities.getUuid(),
+      name: String(payload.name || taskifyNameFromEmail_(email)).trim() || "Member",
+      email: email,
+      role: taskifyNormalizeRole_(payload.role),
+      userId: taskifyNextUserId_(members, payload.reservedUserIds),
+      password: TASKIFY_COMMON_PASSWORD
+    };
+    members.push(member);
+    taskifySaveMembers_(members);
+  } finally {
+    lock.releaseLock();
+  }
+
+  try {
     MailApp.sendEmail({
       to: member.email,
       subject: "Welcome to Taskify - Your Login Credentials",
       body: [
+        "Hello " + member.name + ",",
+        "",
         "Welcome to Taskify.",
         "",
         "Your login credentials are:",
@@ -80,13 +90,27 @@ function taskifyOnboard_(payload) {
         "User ID: " + member.userId,
         "Password: " + TASKIFY_COMMON_PASSWORD,
         "",
-        "Please use these credentials to login to Taskify."
+        "Please keep these credentials safe. You can use them to log in to Taskify anytime.",
+        "",
+        "Regards,",
+        "Taskify Team"
       ].join("\n")
     });
 
-    return taskifyJson_({ success: true, member: member, emailSent: true });
-  } finally {
-    lock.releaseLock();
+    return taskifyJson_({
+      success: true,
+      accessCreated: true,
+      member: taskifyPublicMember_(member),
+      emailSent: true
+    });
+  } catch (error) {
+    return taskifyJson_({
+      success: true,
+      accessCreated: true,
+      member: taskifyPublicMember_(member),
+      emailSent: false,
+      message: "Access was created, but credential email could not be sent. Please contact the admin."
+    });
   }
 }
 
@@ -105,13 +129,20 @@ function taskifySaveMembers_(members) {
   PropertiesService.getScriptProperties().setProperty(TASKIFY_MEMBERS_PROPERTY, JSON.stringify(members));
 }
 
-function taskifyNextUserId_(members) {
-  const highest = members.reduce(function (maximum, member) {
-    const normalized = taskifyNormalizeUserId_(member.userId);
+function taskifyNextUserId_(members, reservedUserIds) {
+  const allUserIds = members.map(function (member) {
+    return member.userId;
+  }).concat(Array.isArray(reservedUserIds) ? reservedUserIds : []);
+  const used = {};
+  const highest = allUserIds.reduce(function (maximum, value) {
+    const normalized = taskifyNormalizeUserId_(value);
+    if (normalized) used[normalized] = true;
     const number = normalized ? Number(normalized.split("-")[1]) : 0;
     return Math.max(maximum, number);
   }, TASKIFY_FIRST_USER_NUMBER - 1);
-  return "USER-" + Math.max(TASKIFY_FIRST_USER_NUMBER, highest + 1);
+  let nextNumber = Math.max(TASKIFY_FIRST_USER_NUMBER, highest + 1);
+  while (used["USER-" + nextNumber]) nextNumber += 1;
+  return "USER-" + nextNumber;
 }
 
 function taskifyNormalizeUserId_(value) {
@@ -123,6 +154,16 @@ function taskifyNameFromEmail_(email) {
   return String(email || "").split("@")[0].split(/[._-]+/).filter(Boolean).map(function (part) {
     return part.charAt(0).toUpperCase() + part.slice(1);
   }).join(" ");
+}
+
+function taskifyNormalizeRole_(value) {
+  return String(value || "").trim().toLowerCase() === "admin" ? "Admin" : "Member";
+}
+
+function taskifyPublicMember_(member) {
+  const publicMember = Object.assign({}, member);
+  delete publicMember.password;
+  return publicMember;
 }
 
 function taskifyJson_(payload) {

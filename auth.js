@@ -3,6 +3,8 @@
   const COMMON_PASSWORD = "Company@1234";
   const USER_ID_PREFIX = "USER-";
   const FIRST_USER_NUMBER = 2021;
+  const EMAIL_EXISTS_MESSAGE = "This email already has Taskify access. Please login with your existing credentials or contact admin.";
+  const EMAIL_SEND_FAILED_MESSAGE = "Access was created, but credential email could not be sent. Please contact the admin.";
 
   function safeParse(value, fallback) {
     try {
@@ -123,20 +125,31 @@
   function ensureMemberForUser(user) {
     if (!user) return null;
     let members = getMembers();
-    let member = findMemberByUserId(user.userId, members) || findMemberByEmail(user.email, members);
+    const requestedUserId = normalizeUserId(user.userId);
+    const normalizedEmail = normalizeEmail(user.email);
+    const memberByEmail = findMemberByEmail(normalizedEmail, members);
+    const memberByUserId = findMemberByUserId(requestedUserId, members);
+    let member = memberByEmail || (
+      memberByUserId && (!normalizedEmail || normalizeEmail(memberByUserId.email) === normalizedEmail)
+        ? memberByUserId
+        : null
+    );
 
     if (member) {
       member.name = String(user.name || member.name || nameFromEmail(member.email)).trim() || "Member";
       member.email = normalizeEmail(user.email || member.email);
       member.role = normalizeRole(user.role || member.role);
+      if (requestedUserId && (!memberByUserId || memberByUserId.id === member.id)) {
+        member.userId = requestedUserId;
+      }
       member.password = COMMON_PASSWORD;
     } else {
       member = {
         id: String(user.id || `member-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`),
         name: String(user.name || nameFromEmail(user.email)).trim() || "Member",
-        email: normalizeEmail(user.email),
+        email: normalizedEmail,
         role: normalizeRole(user.role || (members.length ? "Member" : "Admin")),
-        userId: nextAvailableUserId(members),
+        userId: requestedUserId && !memberByUserId ? requestedUserId : nextAvailableUserId(members),
         password: COMMON_PASSWORD
       };
       members.push(member);
@@ -211,18 +224,13 @@
     const members = getMembers();
     const normalizedEmail = normalizeEmail(email);
     const existing = findMemberByEmail(normalizedEmail, members);
-    if (existing) {
-      existing.name = String(name || existing.name || nameFromEmail(normalizedEmail)).trim() || "Member";
-      existing.role = normalizeRole(existing.role);
-      existing.password = COMMON_PASSWORD;
-      return saveMembers(members).find((member) => member.id === existing.id);
-    }
+    if (existing) return null;
 
     const member = {
       id: `member-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
       name: String(name || nameFromEmail(normalizedEmail)).trim() || "Member",
       email: normalizedEmail,
-      role: normalizeRole(members.length ? role : "Admin"),
+      role: normalizeRole(role),
       userId: nextAvailableUserId(members),
       password: COMMON_PASSWORD
     };
@@ -236,32 +244,53 @@
       return { success: false, message: "Enter a valid email address." };
     }
 
+    if (findMemberByEmail(normalizedEmail)) {
+      return { success: false, code: "EMAIL_EXISTS", message: EMAIL_EXISTS_MESSAGE };
+    }
+
     const backendResult = await requestBackend({
       action: "onboardMember",
       name: String(name || "").trim(),
       email: normalizedEmail,
-      role: normalizeRole(role)
+      role: normalizeRole(role),
+      reservedUserIds: getMembers().map((member) => member.userId)
     });
 
-    if (backendResult.success && backendResult.member) {
+    if (backendResult.code === "EMAIL_EXISTS") {
+      return { success: false, code: "EMAIL_EXISTS", message: EMAIL_EXISTS_MESSAGE };
+    }
+
+    if (backendResult.member && (backendResult.success || backendResult.accessCreated)) {
       const member = ensureMemberForUser(backendResult.member);
       return {
         success: true,
         member,
         emailSent: Boolean(backendResult.emailSent),
-        backendConfigured: true
+        backendConfigured: true,
+        emailMessage: backendResult.emailSent
+          ? ""
+          : (backendResult.message || EMAIL_SEND_FAILED_MESSAGE)
+      };
+    }
+
+    if (backendResult.configured) {
+      return {
+        success: false,
+        message: backendResult.message || "Unable to create member access."
       };
     }
 
     const member = createLocalMember({ name, email: normalizedEmail, role });
+    if (!member) {
+      return { success: false, code: "EMAIL_EXISTS", message: EMAIL_EXISTS_MESSAGE };
+    }
+
     return {
       success: true,
       member,
       emailSent: false,
       backendConfigured: backendResult.configured,
-      emailMessage: backendResult.configured
-        ? (backendResult.message || "Credential email could not be sent.")
-        : "Credential email delivery is not configured yet."
+      emailMessage: EMAIL_SEND_FAILED_MESSAGE
     };
   }
 

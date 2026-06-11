@@ -22,7 +22,6 @@ const joinNameInput = document.getElementById("join-name");
 const joinEmailInput = document.getElementById("join-email");
 const joinSubmitBtn = document.getElementById("join-submit-btn");
 const joinMessage = document.getElementById("join-message");
-const joinResult = document.getElementById("join-result");
 
 const sidebarUserName = document.getElementById("sidebar-user-name");
 const sidebarUserRole = document.getElementById("sidebar-user-role");
@@ -299,7 +298,6 @@ function showJoinScreen() {
     joinMessage.textContent = "";
     joinMessage.className = "login-message";
   }
-  if (joinResult) joinResult.classList.add("hidden");
   joinEmailInput?.focus();
 }
 
@@ -3258,22 +3256,13 @@ async function handleJoinSubmit(event) {
       return;
     }
 
-    const member = result.member;
-    if (joinResult) {
-      joinResult.innerHTML = `
-        <strong>${escapeHTML(t("auth.accessReady"))}</strong>
-        <span>${escapeHTML(t("auth.userId"))}: ${escapeHTML(member.userId)}</span>
-        <span>${escapeHTML(t("auth.password"))}: ${escapeHTML(window.TaskifyAuth.COMMON_PASSWORD)}</span>
-        <small>${escapeHTML(result.emailSent ? t("auth.credentialsEmailed") : (result.emailMessage || t("auth.emailDeliveryPending")))}</small>
-      `;
-      joinResult.classList.remove("hidden");
-    }
-    setJoinMessage(t("auth.onboardingSuccess"), "success");
-
-    const userIdField = document.getElementById("user-id");
-    if (userIdField) userIdField.value = member.userId;
-    const passwordField = document.getElementById("password");
-    if (passwordField) passwordField.value = "";
+    setJoinMessage(
+      result.emailSent
+        ? t("auth.credentialsEmailed")
+        : (result.emailMessage || t("auth.emailSendFailed")),
+      result.emailSent ? "success" : "error"
+    );
+    if (result.emailSent) joinForm?.reset();
     refreshTeamDirectoryUI();
   } catch (error) {
     console.error("Onboarding error:", error);
