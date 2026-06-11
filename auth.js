@@ -244,7 +244,9 @@
       return { success: false, message: "Enter a valid email address." };
     }
 
-    if (findMemberByEmail(normalizedEmail)) {
+    const existingLocalMember = findMemberByEmail(normalizedEmail);
+    const backendConfigured = Boolean(getBackendUrl());
+    if (existingLocalMember && !backendConfigured) {
       return { success: false, code: "EMAIL_EXISTS", message: EMAIL_EXISTS_MESSAGE };
     }
 
@@ -253,7 +255,10 @@
       name: String(name || "").trim(),
       email: normalizedEmail,
       role: normalizeRole(role),
-      reservedUserIds: getMembers().map((member) => member.userId)
+      preferredUserId: existingLocalMember?.userId || "",
+      reservedUserIds: getMembers()
+        .filter((member) => member.id !== existingLocalMember?.id)
+        .map((member) => member.userId)
     });
 
     if (backendResult.code === "EMAIL_EXISTS") {
@@ -280,7 +285,7 @@
       };
     }
 
-    const member = createLocalMember({ name, email: normalizedEmail, role });
+    const member = existingLocalMember || createLocalMember({ name, email: normalizedEmail, role });
     if (!member) {
       return { success: false, code: "EMAIL_EXISTS", message: EMAIL_EXISTS_MESSAGE };
     }

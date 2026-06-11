@@ -62,12 +62,19 @@ function taskifyOnboard_(payload) {
       });
     }
 
+    const preferredUserId = taskifyNormalizeUserId_(payload.preferredUserId);
+    const preferredUserIdIsAvailable = preferredUserId && !members.some(function (item) {
+      return taskifyNormalizeUserId_(item.userId) === preferredUserId;
+    });
+
     member = {
       id: Utilities.getUuid(),
       name: String(payload.name || taskifyNameFromEmail_(email)).trim() || "Member",
       email: email,
       role: taskifyNormalizeRole_(payload.role),
-      userId: taskifyNextUserId_(members, payload.reservedUserIds),
+      userId: preferredUserIdIsAvailable
+        ? preferredUserId
+        : taskifyNextUserId_(members, payload.reservedUserIds),
       password: TASKIFY_COMMON_PASSWORD
     };
     members.push(member);
