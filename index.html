@@ -16,7 +16,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="icon" type="image/svg+xml" href="assets/taskify-logo.svg" />
-  <link rel="stylesheet" href="style.css?v=credential-email-20260611" />
+  <link rel="stylesheet" href="style.css?v=member-registry-20260612" />
 </head>
 <body>
   <!-- Welcome Screen -->
@@ -165,6 +165,10 @@
           <button class="nav-item" data-section="team-section">
             <span class="nav-icon nav-team" aria-hidden="true"></span>
             <span class="nav-label" data-i18n="nav.team">Team</span>
+          </button>
+          <button id="member-registry-nav" class="nav-item hidden" data-section="member-registry-section">
+            <span class="nav-icon nav-registry" aria-hidden="true"></span>
+            <span class="nav-label" data-i18n="nav.memberRegistry">Member Registry</span>
           </button>
           <button class="nav-item" data-section="settings-section">
             <span class="nav-icon nav-settings" aria-hidden="true"></span>
@@ -561,6 +565,59 @@
         </div>
       </section>
 
+      <section id="member-registry-section" class="content-section">
+        <div id="member-registry-content" class="panel member-registry-panel">
+          <div class="panel-header member-registry-header">
+            <div>
+              <h3 data-i18n="registry.title">Admin Member Registry</h3>
+              <p data-i18n="registry.subtitle">Find member login IDs by name or email. Passwords are never shown or exported.</p>
+            </div>
+            <button id="member-registry-export-btn" class="primary-btn" type="button" data-i18n="registry.export">
+              Export Member Registry
+            </button>
+          </div>
+
+          <div class="member-registry-toolbar">
+            <div class="form-group member-registry-search">
+              <label for="member-registry-search" data-i18n="registry.searchLabel">Search registry</label>
+              <input
+                id="member-registry-search"
+                type="search"
+                placeholder="Search by User ID, name, email, role, or status"
+                data-i18n-placeholder="registry.searchPlaceholder"
+                autocomplete="off"
+              />
+            </div>
+            <p id="member-registry-count" class="member-registry-count" aria-live="polite"></p>
+          </div>
+
+          <div class="member-registry-table-wrap">
+            <table class="member-registry-table">
+              <thead>
+                <tr>
+                  <th scope="col" data-i18n="auth.userId">User ID</th>
+                  <th scope="col" data-i18n="team.name">Name</th>
+                  <th scope="col" data-i18n="auth.email">Email</th>
+                  <th scope="col" data-i18n="settings.role">Role</th>
+                  <th scope="col" data-i18n="task.status">Status</th>
+                </tr>
+              </thead>
+              <tbody id="member-registry-body"></tbody>
+            </table>
+          </div>
+
+          <div id="member-registry-empty" class="member-registry-empty hidden">
+            <h4 data-i18n="registry.emptyTitle">No registry records found</h4>
+            <p data-i18n="registry.emptyBody">Try another search or add members from the Team section.</p>
+          </div>
+        </div>
+
+        <div id="member-registry-denied" class="panel member-registry-denied hidden">
+          <h3 data-i18n="registry.deniedTitle">Admin access required</h3>
+          <p data-i18n="registry.deniedBody">You do not have permission to access this section.</p>
+        </div>
+      </section>
+
       <section id="groups-section" class="content-section">
         <div class="groups-layout">
           <div class="panel groups-list-panel">
@@ -928,11 +985,12 @@
   </div>
 
   <div id="toast-container" class="toast-container"></div>
-  <script src="translations.js?v=credential-email-20260611"></script>
+  <script src="translations.js?v=member-registry-20260612"></script>
   <script src="auth-config.js?v=credential-email-live-20260612"></script>
   <script src="auth.js?v=credential-email-live-20260612"></script>
   <script src="team-groups.js?v=user-id-auth-20260610"></script>
-  <script src="script.js?v=credential-email-20260611"></script>
+  <script src="member-registry.js?v=member-registry-20260612"></script>
+  <script src="script.js?v=member-registry-20260612"></script>
   <script src="group-chat.js?v=user-id-auth-20260610"></script>
   <script src="calendar.js?v=settings-language-20260424"></script>
 </body>

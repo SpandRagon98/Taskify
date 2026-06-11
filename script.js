@@ -229,6 +229,7 @@ function refreshLocalizedDynamicUI() {
   window.renderCalendarMeetings?.();
   window.renderTeamGroupsUI?.();
   window.refreshGroupChatLanguage?.();
+  window.MemberRegistry?.render?.();
 }
 
 function applyAppTranslations() {
@@ -662,6 +663,7 @@ function renderTeamMembers() {
 
 function refreshTeamDirectoryUI() {
   groupMembers = getTeamMembersForApp();
+  window.MemberRegistry?.syncMembers?.(window.TeamDirectory?.getTeamMembers?.() || []);
   syncTaskAssigneeOptions();
   renderTeamMembers();
   renderChatUsers();
@@ -703,6 +705,11 @@ function formatTaskAssignees(taskOrAssignees) {
 
 function applyRoleBasedUI() {
   const isAdmin = canAssignTasks();
+  const registryIsAdmin = window.MemberRegistry?.refreshAccess?.() ?? isAdmin;
+
+  if (!registryIsAdmin && document.getElementById("member-registry-section")?.classList.contains("active-section")) {
+    showDashboardSection();
+  }
 
   if (openTaskModalBtn) {
     openTaskModalBtn.disabled = !isAdmin;
@@ -3580,7 +3587,11 @@ if (teamMembersList) {
       return;
     }
 
-    const members = (window.TeamDirectory?.getTeamMembers?.() || [])
+    const currentMembers = window.TeamDirectory?.getTeamMembers?.() || [];
+    const removedMember = currentMembers.find((member) => window.TeamDirectory.normalizeEmail(member.email) === email);
+    window.MemberRegistry?.markRemoved?.(removedMember || { email, status: "Removed" });
+
+    const members = currentMembers
       .filter((member) => window.TeamDirectory.normalizeEmail(member.email) !== email);
     window.TeamDirectory?.saveTeamMembers?.(members);
     const groups = (window.TeamDirectory?.getTeamGroups?.() || []).map((group) => ({
