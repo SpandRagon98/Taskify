@@ -1,0 +1,37 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="taskifyMain" x1="116" y1="122" x2="401" y2="393" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#C9C0FF"/>
+      <stop offset="0.52" stop-color="#9C91F5"/>
+      <stop offset="1" stop-color="#6E64E8"/>
+    </linearGradient>
+    <linearGradient id="taskifyEdge" x1="88" y1="90" x2="423" y2="414" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#EEEAFE"/>
+      <stop offset="0.48" stop-color="#8F82F4"/>
+      <stop offset="1" stop-color="#4F46E5"/>
+    </linearGradient>
+    <radialGradient id="taskifyGlow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(185 173) rotate(48) scale(281 236)">
+      <stop stop-color="#FFFFFF" stop-opacity="0.68"/>
+      <stop offset="0.52" stop-color="#FFFFFF" stop-opacity="0.18"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="softShadow" x="47" y="53" width="424" height="403" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feFlood flood-opacity="0" result="BackgroundImageFix"/>
+      <feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+      <feOffset dx="10" dy="13"/>
+      <feGaussianBlur stdDeviation="14"/>
+      <feColorMatrix type="matrix" values="0 0 0 0 0.141 0 0 0 0 0.121 0 0 0 0 0.439 0 0 0 0.28 0"/>
+      <feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow"/>
+      <feBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow" result="shape"/>
+    </filter>
+  </defs>
+
+  <g filter="url(#softShadow)">
+    <path d="M95.7 198.3C99.4 119.4 160.5 84.6 250.4 91.2L343.3 98C413.6 103.1 449.6 146.2 439.4 225.7L435.4 256.8C425.4 335.2 373.9 373.2 295.1 362.3L193.2 348.2L112.1 419.1C101.1 428.7 83.9 419.9 85.2 405.4L94.1 304.9C82 276.3 94 234.4 95.7 198.3Z" fill="url(#taskifyEdge)"/>
+    <path d="M111.8 201.1C115 131.9 168.3 101.3 247.5 107.1L337.9 113.7C400.6 118.3 429.3 154.5 420.1 226.2L416.7 252.9C407.9 321.3 363.9 352.6 296.7 343.3L188.2 328.3L108.7 397.6L116.9 299.7C105.7 274.4 110.3 234.2 111.8 201.1Z" fill="url(#taskifyMain)"/>
+    <path d="M122.6 191.4C127.5 134.1 174.5 111.2 248 116.5L335.1 122.9C388.8 126.9 414.3 158.4 407.1 222.3" stroke="#FFFFFF" stroke-opacity="0.42" stroke-width="8" stroke-linecap="round"/>
+    <path d="M133.4 288.5C145.6 318.2 181 330.7 230.1 336.7" stroke="#FFFFFF" stroke-opacity="0.22" stroke-width="7" stroke-linecap="round"/>
+    <path d="M111.8 201.1C115 131.9 168.3 101.3 247.5 107.1L337.9 113.7C400.6 118.3 429.3 154.5 420.1 226.2L416.7 252.9C407.9 321.3 363.9 352.6 296.7 343.3L188.2 328.3L108.7 397.6L116.9 299.7C105.7 274.4 110.3 234.2 111.8 201.1Z" fill="url(#taskifyGlow)"/>
+    <text x="256" y="258" text-anchor="middle" fill="#FFFFFF" font-family="Arial Narrow, Impact, Montserrat, Arial, sans-serif" font-size="72" font-weight="900" letter-spacing="-1">TASKIFY</text>
+  </g>
+</svg>
