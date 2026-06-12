@@ -1,5 +1,17 @@
 const APP_STORAGE_VERSION = "taskify-client-clean-2026-04-26";
 const SETTINGS_PREFERENCES_KEY = "ttm_settings_preferences";
+const WORKSPACE_THEME_FALLBACK_KEY = "taskify-theme";
+const DEFAULT_WORKSPACE_THEME = "taskify-purple";
+const WORKSPACE_THEMES = new Set([
+  "taskify-purple",
+  "ocean-blue",
+  "mint-green",
+  "sunset-orange",
+  "rose-pink",
+  "lavender",
+  "sky-cyan",
+  "peach-pastel"
+]);
 const MAX_ATTACHMENT_SIZE = 750 * 1024;
 const MAX_VOICE_SIZE = 1200 * 1024;
 
@@ -120,6 +132,7 @@ const notificationSoundToggle = document.getElementById("notification-sound-togg
 const themeToggle = document.getElementById("theme-toggle");
 const themeModeState = document.getElementById("theme-mode-state");
 const themeStatusText = document.getElementById("theme-status-text");
+const workspaceThemeOptions = document.querySelectorAll('input[name="workspace-theme"]');
 const rememberDataToggle = document.getElementById("remember-data-toggle");
 const storageStatusText = document.getElementById("storage-status-text");
 const clearNotificationsBtn = document.getElementById("clear-notifications-btn");
@@ -209,6 +222,47 @@ function updateThemeText(theme = getSavedTheme()) {
   }
 }
 
+function normalizeWorkspaceTheme(theme) {
+  return WORKSPACE_THEMES.has(theme) ? theme : DEFAULT_WORKSPACE_THEME;
+}
+
+function getWorkspaceThemeStorageKey(user = getUserFromLocalStorage()) {
+  const userId = String(user?.userId || "").trim();
+  return userId ? `${WORKSPACE_THEME_FALLBACK_KEY}-${userId}` : WORKSPACE_THEME_FALLBACK_KEY;
+}
+
+function getSavedWorkspaceTheme(user = getUserFromLocalStorage()) {
+  try {
+    return normalizeWorkspaceTheme(localStorage.getItem(getWorkspaceThemeStorageKey(user)));
+  } catch {
+    return DEFAULT_WORKSPACE_THEME;
+  }
+}
+
+function updateWorkspaceThemeControls(theme = getSavedWorkspaceTheme()) {
+  const normalizedTheme = normalizeWorkspaceTheme(theme);
+  workspaceThemeOptions.forEach((option) => {
+    option.checked = option.value === normalizedTheme;
+  });
+}
+
+function applyWorkspaceTheme(theme, options = {}) {
+  const normalizedTheme = normalizeWorkspaceTheme(theme);
+  const user = Object.prototype.hasOwnProperty.call(options, "user")
+    ? options.user
+    : getUserFromLocalStorage();
+
+  document.documentElement.setAttribute("data-workspace-theme", normalizedTheme);
+  if (options.persist !== false) {
+    try {
+      localStorage.setItem(getWorkspaceThemeStorageKey(user), normalizedTheme);
+    } catch {}
+  }
+
+  updateWorkspaceThemeControls(normalizedTheme);
+  return normalizedTheme;
+}
+
 function updateLanguageControls() {
   const selectedLanguage = window.AppI18n?.getLanguage?.() || "en";
   languageOptions.forEach((option) => {
@@ -220,6 +274,7 @@ function refreshLocalizedDynamicUI() {
   document.title = t("app.title");
   updatePageTitleTranslation();
   updateThemeText(getSavedTheme());
+  updateWorkspaceThemeControls(getSavedWorkspaceTheme());
   updateStorageStatusText();
   updateNotificationPermissionUI();
   renderNotifications();
@@ -335,6 +390,7 @@ function updateUserUI(user) {
   const userName = user?.name || "User";
   const userRole = normalizeUserRole(user?.role);
   const firstLetter = userName.charAt(0).toUpperCase();
+  applyWorkspaceTheme(getSavedWorkspaceTheme(user), { persist: false, user });
 
   if (sidebarUserName) sidebarUserName.textContent = userName;
   if (sidebarUserRole) sidebarUserRole.textContent = userRole;
@@ -2935,8 +2991,9 @@ function isDashboardTaskOverdue(task) {
 }
 
 function getMemberChartColor(index) {
+  const themeAccent = getComputedStyle(document.documentElement).getPropertyValue("--accent-color").trim();
   const palette = [
-    "#4f46e5",
+    themeAccent || "#5b4df1",
     "#0ea5e9",
     "#22c55e",
     "#f59e0b",
@@ -3424,6 +3481,7 @@ if (logoutBtn) {
   logoutBtn.addEventListener("click", function () {
     updateCurrentUserPresence("offline");
     clearUserFromLocalStorage();
+    applyWorkspaceTheme(getSavedWorkspaceTheme(null), { persist: false, user: null });
     showWelcomeScreen();
   });
 }
@@ -3839,6 +3897,15 @@ if (themeToggle) {
   });
 }
 
+workspaceThemeOptions.forEach((option) => {
+  option.addEventListener("change", () => {
+    if (!option.checked) return;
+    applyWorkspaceTheme(option.value);
+    renderAllTaskUI();
+    showToast(t("settings.themes.changedTitle"), t("settings.themes.changedBody"));
+  });
+});
+
 languageOptions.forEach((option) => {
   option.addEventListener("change", () => {
     if (!option.checked) return;
@@ -3933,6 +4000,7 @@ function checkExistingLogin() {
 
 migrateAppStorageIfNeeded();
 applyTheme(getSavedTheme());
+applyWorkspaceTheme(getSavedWorkspaceTheme(), { persist: false });
 setupNavigation();
 setupPrivateChatChannel();
 setupPresenceTracking();

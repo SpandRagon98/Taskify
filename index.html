@@ -9,6 +9,11 @@
       try {
         var savedTheme = localStorage.getItem("ttm_theme");
         if (savedTheme === "dark") document.documentElement.setAttribute("data-theme", "dark");
+        var savedUser = JSON.parse(localStorage.getItem("ttm_logged_in_user") || "null");
+        var userId = String(savedUser && savedUser.userId || "").trim();
+        var workspaceThemeKey = userId ? "taskify-theme-" + userId : "taskify-theme";
+        var workspaceTheme = localStorage.getItem(workspaceThemeKey) || "taskify-purple";
+        document.documentElement.setAttribute("data-workspace-theme", workspaceTheme);
       } catch (error) {}
     })();
   </script>
@@ -16,7 +21,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="icon" type="image/svg+xml" href="assets/taskify-logo.svg" />
-  <link rel="stylesheet" href="style.css?v=team-insights-20260612" />
+  <link rel="stylesheet" href="style.css?v=premium-themes-20260612" />
 </head>
 <body>
   <!-- Welcome Screen -->
@@ -631,6 +636,63 @@
                     </span>
                   </label>
                   <p id="theme-status-text" class="settings-control-status">Theme: Light</p>
+                  <div class="workspace-theme-picker">
+                    <div class="workspace-theme-picker-header">
+                      <h5 data-i18n="settings.themes.title">Themes</h5>
+                      <p data-i18n="settings.themes.description">Choose your workspace color theme</p>
+                    </div>
+                    <div id="workspace-theme-options" class="workspace-theme-options" role="radiogroup" aria-label="Workspace color theme">
+                      <label class="workspace-theme-option theme-preview-taskify-purple">
+                        <input type="radio" name="workspace-theme" value="taskify-purple" />
+                        <span class="workspace-theme-swatch" aria-hidden="true"></span>
+                        <span class="workspace-theme-name">Taskify Purple</span>
+                        <span class="workspace-theme-check" aria-hidden="true"></span>
+                      </label>
+                      <label class="workspace-theme-option theme-preview-ocean-blue">
+                        <input type="radio" name="workspace-theme" value="ocean-blue" />
+                        <span class="workspace-theme-swatch" aria-hidden="true"></span>
+                        <span class="workspace-theme-name">Ocean Blue</span>
+                        <span class="workspace-theme-check" aria-hidden="true"></span>
+                      </label>
+                      <label class="workspace-theme-option theme-preview-mint-green">
+                        <input type="radio" name="workspace-theme" value="mint-green" />
+                        <span class="workspace-theme-swatch" aria-hidden="true"></span>
+                        <span class="workspace-theme-name">Mint Green</span>
+                        <span class="workspace-theme-check" aria-hidden="true"></span>
+                      </label>
+                      <label class="workspace-theme-option theme-preview-sunset-orange">
+                        <input type="radio" name="workspace-theme" value="sunset-orange" />
+                        <span class="workspace-theme-swatch" aria-hidden="true"></span>
+                        <span class="workspace-theme-name">Sunset Orange</span>
+                        <span class="workspace-theme-check" aria-hidden="true"></span>
+                      </label>
+                      <label class="workspace-theme-option theme-preview-rose-pink">
+                        <input type="radio" name="workspace-theme" value="rose-pink" />
+                        <span class="workspace-theme-swatch" aria-hidden="true"></span>
+                        <span class="workspace-theme-name">Rose Pink</span>
+                        <span class="workspace-theme-check" aria-hidden="true"></span>
+                      </label>
+                      <label class="workspace-theme-option theme-preview-lavender">
+                        <input type="radio" name="workspace-theme" value="lavender" />
+                        <span class="workspace-theme-swatch" aria-hidden="true"></span>
+                        <span class="workspace-theme-name">Lavender</span>
+                        <span class="workspace-theme-check" aria-hidden="true"></span>
+                      </label>
+                      <label class="workspace-theme-option theme-preview-sky-cyan">
+                        <input type="radio" name="workspace-theme" value="sky-cyan" />
+                        <span class="workspace-theme-swatch" aria-hidden="true"></span>
+                        <span class="workspace-theme-name">Sky Cyan</span>
+                        <span class="workspace-theme-check" aria-hidden="true"></span>
+                      </label>
+                      <label class="workspace-theme-option theme-preview-peach-pastel">
+                        <input type="radio" name="workspace-theme" value="peach-pastel" />
+                        <span class="workspace-theme-swatch" aria-hidden="true"></span>
+                        <span class="workspace-theme-name">Peach Pastel</span>
+                        <span class="workspace-theme-check" aria-hidden="true"></span>
+                      </label>
+                    </div>
+                    <p class="settings-control-status" data-i18n="settings.themes.localNote">Saved only for this user on this device.</p>
+                  </div>
                   <label class="settings-toggle">
                     <input type="checkbox" id="remember-data-toggle" checked />
                     <span data-i18n="settings.rememberData">Remember app data on this device</span>
@@ -946,11 +1008,11 @@
   </div>
 
   <div id="toast-container" class="toast-container"></div>
-  <script src="translations.js?v=team-insights-20260612"></script>
+  <script src="translations.js?v=premium-themes-20260612"></script>
   <script src="auth-config.js?v=credential-email-live-20260612"></script>
   <script src="auth.js?v=credential-email-live-20260612"></script>
   <script src="team-groups.js?v=user-id-auth-20260610"></script>
-  <script src="script.js?v=team-insights-20260612"></script>
+  <script src="script.js?v=premium-themes-20260612"></script>
   <script src="group-chat.js?v=user-id-auth-20260610"></script>
   <script src="calendar.js?v=settings-language-20260424"></script>
 </body>

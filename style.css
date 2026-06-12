@@ -4,6 +4,109 @@
   box-sizing: border-box;
 }
 
+:root {
+  --accent-color: #5b4df1;
+  --accent-strong: #6d3de2;
+  --accent-rgb: 91, 77, 241;
+  --accent-gradient: linear-gradient(135deg, #5b4df1 0%, #6d3de2 100%);
+  --accent-soft: rgba(91, 77, 241, 0.12);
+  --app-bg:
+    radial-gradient(circle at 12% 16%, rgba(91, 77, 241, 0.18), transparent 32%),
+    radial-gradient(circle at 88% 12%, rgba(167, 139, 250, 0.2), transparent 30%),
+    linear-gradient(135deg, #f8faff 0%, #eef2ff 48%, #faf7ff 100%);
+  --glass-bg: linear-gradient(145deg, rgba(255, 255, 255, 0.76), rgba(255, 255, 255, 0.42));
+  --glass-bg-strong: rgba(255, 255, 255, 0.82);
+  --glass-bg-subtle: rgba(255, 255, 255, 0.56);
+  --glass-border: rgba(255, 255, 255, 0.82);
+  --glass-shadow: 0 22px 58px rgba(30, 41, 59, 0.12), 0 8px 24px rgba(var(--accent-rgb), 0.08);
+  --text-primary: #111827;
+  --text-secondary: #64748b;
+}
+
+html[data-workspace-theme="ocean-blue"] {
+  --accent-color: #2563eb;
+  --accent-strong: #0ea5e9;
+  --accent-rgb: 37, 99, 235;
+  --accent-gradient: linear-gradient(135deg, #2563eb 0%, #0ea5e9 100%);
+  --accent-soft: rgba(37, 99, 235, 0.12);
+  --app-bg:
+    radial-gradient(circle at 12% 16%, rgba(37, 99, 235, 0.18), transparent 32%),
+    radial-gradient(circle at 88% 12%, rgba(56, 189, 248, 0.2), transparent 30%),
+    linear-gradient(135deg, #f7fbff 0%, #eaf4ff 48%, #f5fcff 100%);
+}
+
+html[data-workspace-theme="mint-green"] {
+  --accent-color: #059669;
+  --accent-strong: #14b8a6;
+  --accent-rgb: 5, 150, 105;
+  --accent-gradient: linear-gradient(135deg, #059669 0%, #14b8a6 100%);
+  --accent-soft: rgba(5, 150, 105, 0.12);
+  --app-bg:
+    radial-gradient(circle at 12% 16%, rgba(5, 150, 105, 0.17), transparent 32%),
+    radial-gradient(circle at 88% 12%, rgba(110, 231, 183, 0.22), transparent 30%),
+    linear-gradient(135deg, #f7fffb 0%, #eafaf3 48%, #f4fffc 100%);
+}
+
+html[data-workspace-theme="sunset-orange"] {
+  --accent-color: #ea580c;
+  --accent-strong: #f59e0b;
+  --accent-rgb: 234, 88, 12;
+  --accent-gradient: linear-gradient(135deg, #ea580c 0%, #f59e0b 100%);
+  --accent-soft: rgba(234, 88, 12, 0.12);
+  --app-bg:
+    radial-gradient(circle at 12% 16%, rgba(249, 115, 22, 0.18), transparent 32%),
+    radial-gradient(circle at 88% 12%, rgba(251, 191, 36, 0.2), transparent 30%),
+    linear-gradient(135deg, #fffaf6 0%, #fff1e7 48%, #fffaf0 100%);
+}
+
+html[data-workspace-theme="rose-pink"] {
+  --accent-color: #db2777;
+  --accent-strong: #f43f5e;
+  --accent-rgb: 219, 39, 119;
+  --accent-gradient: linear-gradient(135deg, #db2777 0%, #f43f5e 100%);
+  --accent-soft: rgba(219, 39, 119, 0.12);
+  --app-bg:
+    radial-gradient(circle at 12% 16%, rgba(219, 39, 119, 0.17), transparent 32%),
+    radial-gradient(circle at 88% 12%, rgba(251, 113, 133, 0.2), transparent 30%),
+    linear-gradient(135deg, #fff8fc 0%, #fdeef6 48%, #fff7f8 100%);
+}
+
+html[data-workspace-theme="lavender"] {
+  --accent-color: #7c3aed;
+  --accent-strong: #a855f7;
+  --accent-rgb: 124, 58, 237;
+  --accent-gradient: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%);
+  --accent-soft: rgba(124, 58, 237, 0.12);
+  --app-bg:
+    radial-gradient(circle at 12% 16%, rgba(124, 58, 237, 0.17), transparent 32%),
+    radial-gradient(circle at 88% 12%, rgba(216, 180, 254, 0.24), transparent 30%),
+    linear-gradient(135deg, #fbf9ff 0%, #f1ebff 48%, #fff8ff 100%);
+}
+
+html[data-workspace-theme="sky-cyan"] {
+  --accent-color: #0891b2;
+  --accent-strong: #06b6d4;
+  --accent-rgb: 8, 145, 178;
+  --accent-gradient: linear-gradient(135deg, #0891b2 0%, #06b6d4 100%);
+  --accent-soft: rgba(8, 145, 178, 0.12);
+  --app-bg:
+    radial-gradient(circle at 12% 16%, rgba(8, 145, 178, 0.17), transparent 32%),
+    radial-gradient(circle at 88% 12%, rgba(103, 232, 249, 0.22), transparent 30%),
+    linear-gradient(135deg, #f7fdff 0%, #e8faff 48%, #f5ffff 100%);
+}
+
+html[data-workspace-theme="peach-pastel"] {
+  --accent-color: #e76f51;
+  --accent-strong: #f4a261;
+  --accent-rgb: 231, 111, 81;
+  --accent-gradient: linear-gradient(135deg, #e76f51 0%, #f4a261 100%);
+  --accent-soft: rgba(231, 111, 81, 0.13);
+  --app-bg:
+    radial-gradient(circle at 12% 16%, rgba(231, 111, 81, 0.17), transparent 32%),
+    radial-gradient(circle at 88% 12%, rgba(251, 191, 146, 0.24), transparent 30%),
+    linear-gradient(135deg, #fffaf8 0%, #ffefe8 48%, #fff8f2 100%);
+}
+
 body {
   font-family: "Montserrat", Arial, sans-serif;
   background:
@@ -4966,6 +5069,453 @@ html[data-theme="dark"] .mobile-menu-btn {
 
 html[data-theme="dark"] .mobile-sidebar-overlay {
   background: rgba(0, 0, 0, 0.62);
+}
+
+/* ================= PREMIUM WORKSPACE THEMES ================= */
+
+body {
+  background: var(--app-bg);
+  color: var(--text-primary);
+  transition: background 0.28s ease, color 0.2s ease;
+}
+
+.welcome-screen,
+.login-screen {
+  background: var(--app-bg);
+}
+
+.main-content {
+  background: transparent;
+}
+
+.topbar,
+.stat-card,
+.panel,
+.login-card,
+.task-modal,
+.settings-card,
+.settings-category-card,
+.team-card,
+.task-item,
+.kanban-card,
+.notification-item,
+.focus-card,
+.task-column,
+.drive-file-card,
+.drive-empty,
+.calendar-meeting-card,
+.calendar-empty,
+.group-channel-card,
+.group-member-check,
+.team-empty,
+.groups-empty-state,
+.today-meeting-item,
+.today-meetings-empty,
+.message-bubble.received,
+.chat-user,
+.settings-switch-row,
+.language-option {
+  background: var(--glass-bg);
+  border-color: var(--glass-border);
+  box-shadow: var(--glass-shadow);
+  backdrop-filter: blur(24px) saturate(155%);
+  -webkit-backdrop-filter: blur(24px) saturate(155%);
+}
+
+.drive-preview-modal,
+.meeting-modal {
+  background: var(--glass-bg-strong);
+  border-color: var(--glass-border);
+  box-shadow: 0 32px 90px rgba(15, 23, 42, 0.28), 0 10px 34px rgba(var(--accent-rgb), 0.12);
+  backdrop-filter: blur(28px) saturate(150%);
+  -webkit-backdrop-filter: blur(28px) saturate(150%);
+}
+
+.sidebar {
+  background:
+    radial-gradient(circle at 15% 8%, rgba(var(--accent-rgb), 0.28), transparent 34%),
+    linear-gradient(180deg, rgba(15, 23, 42, 0.96), rgba(17, 24, 39, 0.9));
+}
+
+.primary-btn,
+.login-btn,
+.welcome-cta,
+.nav-item.active,
+.message-bubble.sent,
+.active-room-btn,
+.team-avatar,
+.group-chat-avatar,
+.settings-profile-preview,
+.chat-unread-badge,
+.task-comment-add {
+  background: var(--accent-gradient);
+}
+
+.primary-btn,
+.login-btn,
+.welcome-cta,
+.nav-item.active,
+.message-bubble.sent {
+  box-shadow: 0 14px 30px rgba(var(--accent-rgb), 0.26);
+}
+
+.user-avatar {
+  background: var(--accent-color);
+}
+
+.auth-secondary-btn,
+.drive-file-preview span,
+.drive-preview-unavailable span,
+.team-card .team-user-id,
+.role-chip,
+.task-tag {
+  color: var(--accent-color);
+}
+
+.auth-secondary-btn:hover {
+  color: var(--accent-strong);
+}
+
+.role-chip,
+.task-tag,
+.drive-preview-unavailable span,
+.active-chat-user,
+.search-result-item:hover {
+  background: var(--accent-soft);
+}
+
+.active-chat-user {
+  color: var(--accent-color);
+}
+
+.task-tag {
+  border-color: rgba(var(--accent-rgb), 0.2);
+}
+
+.welcome-kicker {
+  border-color: rgba(var(--accent-rgb), 0.24);
+  background: var(--accent-soft);
+  color: var(--accent-color);
+}
+
+.welcome-feature span {
+  background: var(--accent-soft);
+}
+
+.welcome-feature span::after {
+  border-color: var(--accent-color);
+}
+
+.active-group-channel,
+.language-option:has(input:checked) {
+  border-color: rgba(var(--accent-rgb), 0.46);
+  box-shadow: 0 14px 30px rgba(var(--accent-rgb), 0.12);
+}
+
+.language-option:has(input:checked) {
+  background: var(--accent-soft);
+  color: var(--accent-color);
+}
+
+.settings-category-icon {
+  border-color: rgba(var(--accent-rgb), 0.22);
+  background: var(--accent-soft);
+  color: var(--accent-color);
+}
+
+.search-box:focus,
+.chat-input-row input:focus,
+.task-form textarea:focus,
+.task-form select:focus,
+.task-form input:focus,
+.task-comment-input:focus,
+.form-group input:focus,
+.form-group textarea:focus,
+.form-group select:focus {
+  border-color: var(--accent-color);
+  box-shadow: 0 0 0 3px rgba(var(--accent-rgb), 0.14);
+}
+
+input[type="checkbox"],
+input[type="radio"] {
+  accent-color: var(--accent-color);
+}
+
+.settings-switch-input:focus-visible + .settings-switch-visual {
+  outline-color: rgba(var(--accent-rgb), 0.3);
+}
+
+.settings-switch-input:checked + .settings-switch-visual {
+  background: var(--accent-gradient);
+  box-shadow: inset 0 2px 5px rgba(var(--accent-rgb), 0.28), 0 8px 18px rgba(var(--accent-rgb), 0.22);
+}
+
+.timeline-marker {
+  background: var(--accent-color);
+  border-color: rgba(var(--accent-rgb), 0.18);
+  box-shadow: 0 10px 22px rgba(var(--accent-rgb), 0.22);
+}
+
+.mini-donut,
+html[data-theme="dark"] .mini-donut {
+  background:
+    radial-gradient(circle, var(--glass-bg-strong) 0 54%, transparent 55%),
+    conic-gradient(var(--accent-color) calc(var(--completed) * 1%), #f59e0b 0);
+}
+
+.workspace-theme-picker {
+  margin: 14px 0 8px;
+  padding: 14px;
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
+  background: var(--glass-bg-subtle);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
+}
+
+.workspace-theme-picker-header {
+  margin-bottom: 12px;
+}
+
+.workspace-theme-picker-header h5 {
+  margin-bottom: 3px;
+  color: var(--text-primary);
+  font-size: 14px;
+}
+
+.workspace-theme-picker-header p {
+  color: var(--text-secondary);
+  font-size: 11px;
+}
+
+.workspace-theme-options {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 9px;
+}
+
+.workspace-theme-option {
+  --preview-start: #5b4df1;
+  --preview-end: #a78bfa;
+  position: relative;
+  display: grid;
+  grid-template-columns: 30px minmax(0, 1fr) 18px;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  padding: 9px;
+  border: 1px solid rgba(203, 213, 225, 0.74);
+  border-radius: 13px;
+  background: rgba(255, 255, 255, 0.58);
+  cursor: pointer;
+  transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+}
+
+.workspace-theme-option:hover {
+  transform: translateY(-2px);
+  border-color: rgba(var(--accent-rgb), 0.34);
+  box-shadow: 0 12px 26px rgba(var(--accent-rgb), 0.1);
+}
+
+.workspace-theme-option input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.workspace-theme-swatch {
+  width: 30px;
+  height: 30px;
+  border: 2px solid rgba(255, 255, 255, 0.88);
+  border-radius: 10px;
+  background: linear-gradient(135deg, var(--preview-start), var(--preview-end));
+  box-shadow: 0 7px 16px color-mix(in srgb, var(--preview-start) 24%, transparent);
+}
+
+.workspace-theme-name {
+  overflow: hidden;
+  color: var(--text-primary);
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.workspace-theme-check {
+  width: 18px;
+  height: 18px;
+  border: 1px solid rgba(148, 163, 184, 0.58);
+  border-radius: 50%;
+}
+
+.workspace-theme-check::after {
+  content: "";
+  display: block;
+  width: 5px;
+  height: 9px;
+  margin: 2px 0 0 5px;
+  border-right: 2px solid #ffffff;
+  border-bottom: 2px solid #ffffff;
+  opacity: 0;
+  transform: rotate(42deg);
+}
+
+.workspace-theme-option:has(input:checked) {
+  border-color: rgba(var(--accent-rgb), 0.52);
+  background: var(--accent-soft);
+  box-shadow: 0 12px 28px rgba(var(--accent-rgb), 0.14);
+}
+
+.workspace-theme-option:has(input:checked) .workspace-theme-check {
+  border-color: transparent;
+  background: var(--accent-gradient);
+}
+
+.workspace-theme-option:has(input:checked) .workspace-theme-check::after {
+  opacity: 1;
+}
+
+.workspace-theme-option:has(input:focus-visible) {
+  outline: 3px solid rgba(var(--accent-rgb), 0.24);
+  outline-offset: 2px;
+}
+
+.theme-preview-ocean-blue {
+  --preview-start: #2563eb;
+  --preview-end: #38bdf8;
+}
+
+.theme-preview-mint-green {
+  --preview-start: #059669;
+  --preview-end: #6ee7b7;
+}
+
+.theme-preview-sunset-orange {
+  --preview-start: #ea580c;
+  --preview-end: #fbbf24;
+}
+
+.theme-preview-rose-pink {
+  --preview-start: #db2777;
+  --preview-end: #fb7185;
+}
+
+.theme-preview-lavender {
+  --preview-start: #7c3aed;
+  --preview-end: #d8b4fe;
+}
+
+.theme-preview-sky-cyan {
+  --preview-start: #0891b2;
+  --preview-end: #67e8f9;
+}
+
+.theme-preview-peach-pastel {
+  --preview-start: #e76f51;
+  --preview-end: #fbc092;
+}
+
+html[data-theme="dark"] {
+  --app-bg:
+    radial-gradient(circle at 14% 12%, rgba(var(--accent-rgb), 0.14), transparent 28%),
+    linear-gradient(135deg, #030303 0%, #050505 52%, #090909 100%);
+  --glass-bg: linear-gradient(145deg, rgba(25, 25, 25, 0.9), rgba(14, 14, 14, 0.82));
+  --glass-bg-strong: rgba(12, 12, 12, 0.94);
+  --glass-bg-subtle: rgba(20, 20, 20, 0.82);
+  --glass-border: rgba(255, 255, 255, 0.1);
+  --glass-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04), 0 20px 52px rgba(0, 0, 0, 0.4);
+  --text-primary: #f5f5f5;
+  --text-secondary: #a3a3a3;
+}
+
+html[data-theme="dark"] body,
+html[data-theme="dark"] .main-content {
+  background: var(--app-bg);
+}
+
+html[data-theme="dark"] .topbar,
+html[data-theme="dark"] .stat-card,
+html[data-theme="dark"] .panel,
+html[data-theme="dark"] .login-card,
+html[data-theme="dark"] .task-modal,
+html[data-theme="dark"] .settings-card,
+html[data-theme="dark"] .settings-category-card,
+html[data-theme="dark"] .team-card,
+html[data-theme="dark"] .task-item,
+html[data-theme="dark"] .kanban-card,
+html[data-theme="dark"] .notification-item,
+html[data-theme="dark"] .focus-card,
+html[data-theme="dark"] .task-column,
+html[data-theme="dark"] .drive-file-card,
+html[data-theme="dark"] .drive-empty,
+html[data-theme="dark"] .calendar-meeting-card,
+html[data-theme="dark"] .calendar-empty,
+html[data-theme="dark"] .group-channel-card,
+html[data-theme="dark"] .group-member-check,
+html[data-theme="dark"] .team-empty,
+html[data-theme="dark"] .groups-empty-state,
+html[data-theme="dark"] .today-meeting-item,
+html[data-theme="dark"] .today-meetings-empty,
+html[data-theme="dark"] .message-bubble.received,
+html[data-theme="dark"] .chat-user,
+html[data-theme="dark"] .settings-switch-row,
+html[data-theme="dark"] .language-option {
+  background: var(--glass-bg);
+  border-color: var(--glass-border);
+  box-shadow: var(--glass-shadow);
+  backdrop-filter: blur(22px) saturate(130%);
+  -webkit-backdrop-filter: blur(22px) saturate(130%);
+}
+
+html[data-theme="dark"] .sidebar {
+  background:
+    radial-gradient(circle at 14% 8%, rgba(var(--accent-rgb), 0.2), transparent 32%),
+    linear-gradient(180deg, #050505, #090909);
+}
+
+html[data-theme="dark"] .workspace-theme-picker {
+  border-color: var(--glass-border);
+  background: var(--glass-bg-subtle);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+html[data-theme="dark"] .workspace-theme-option {
+  border-color: rgba(255, 255, 255, 0.1);
+  background: rgba(12, 12, 12, 0.76);
+}
+
+html[data-theme="dark"] .workspace-theme-option:has(input:checked) {
+  border-color: rgba(var(--accent-rgb), 0.58);
+  background: rgba(var(--accent-rgb), 0.18);
+}
+
+html[data-theme="dark"] .workspace-theme-picker-header h5,
+html[data-theme="dark"] .workspace-theme-name {
+  color: var(--text-primary);
+}
+
+html[data-theme="dark"] .workspace-theme-picker-header p {
+  color: var(--text-secondary);
+}
+
+html[data-theme="dark"] .drive-preview-modal,
+html[data-theme="dark"] .meeting-modal {
+  background: var(--glass-bg-strong);
+  border-color: var(--glass-border);
+}
+
+@media (max-width: 900px) {
+  .workspace-theme-options {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 430px) {
+  .workspace-theme-options {
+    grid-template-columns: 1fr;
+  }
 }
 
 /* Tablet and phone usability guard */
