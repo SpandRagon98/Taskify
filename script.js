@@ -1,5 +1,6 @@
 const APP_STORAGE_VERSION = "taskify-client-clean-2026-04-26";
 const SETTINGS_PREFERENCES_KEY = "ttm_settings_preferences";
+const SIDEBAR_COLLAPSE_KEY = "taskify-sidebar-collapsed";
 const WORKSPACE_THEME_FALLBACK_KEY = "taskify-theme";
 const DEFAULT_WORKSPACE_THEME = "taskify-purple";
 const WORKSPACE_THEMES = new Set([
@@ -46,6 +47,7 @@ const navItems = document.querySelectorAll(".nav-item");
 const sections = document.querySelectorAll(".content-section");
 const pageTitle = document.getElementById("page-title");
 const sidebar = document.getElementById("app-sidebar");
+const sidebarCollapseBtn = document.getElementById("sidebar-collapse-btn");
 const mobileMenuBtn = document.getElementById("mobile-menu-btn");
 const mobileSidebarOverlay = document.getElementById("mobile-sidebar-overlay");
 
@@ -377,6 +379,28 @@ function setMobileNavOpen(isOpen) {
 
 function closeMobileNav() {
   setMobileNavOpen(false);
+}
+
+function getSavedSidebarCollapsed() {
+  return localStorage.getItem(SIDEBAR_COLLAPSE_KEY) === "true";
+}
+
+function setSidebarCollapsed(isCollapsed, { persist = true } = {}) {
+  if (!appScreen || !sidebarCollapseBtn) return;
+
+  appScreen.classList.toggle("sidebar-collapsed", isCollapsed);
+  sidebarCollapseBtn.setAttribute("aria-expanded", isCollapsed ? "false" : "true");
+  sidebarCollapseBtn.setAttribute("aria-label", isCollapsed ? "Expand sidebar" : "Collapse sidebar");
+  sidebarCollapseBtn.title = isCollapsed ? "Expand sidebar" : "Collapse sidebar";
+
+  navItems.forEach((item) => {
+    const label = item.querySelector(".nav-label")?.textContent?.trim() || "";
+    item.title = isCollapsed ? label : "";
+  });
+
+  if (persist) {
+    localStorage.setItem(SIDEBAR_COLLAPSE_KEY, String(isCollapsed));
+  }
 }
 
 function setLoginMessage(message, type = "") {
@@ -2619,11 +2643,11 @@ function renderTaskComments(task) {
   const comments = Array.isArray(task.comments) ? task.comments : [];
 
   return `
-    <div class="task-comments">
-      <div class="task-comments-header">
+    <details class="task-comments task-card-detail">
+      <summary class="task-comments-header">
         <span>${escapeHTML(t("task.comments"))}</span>
         <small>${comments.length}</small>
-      </div>
+      </summary>
       <div class="task-comment-list">
         ${comments.length === 0
           ? `<p class="task-comment-empty">${escapeHTML(t("task.noComments"))}</p>`
@@ -2642,7 +2666,7 @@ function renderTaskComments(task) {
         <input type="text" class="task-comment-input" placeholder="${escapeHTML(t("task.addComment"))}" />
         <button type="button" class="task-comment-add" data-task-id="${escapeHTML(task.id)}">${escapeHTML(t("actions.add"))}</button>
       </div>
-    </div>
+    </details>
   `;
 }
 
@@ -2650,16 +2674,18 @@ function renderTaskAttachments(task) {
   const attachments = normalizeAttachments(task.attachments);
 
   return `
-    <div class="task-attachments">
-      <div class="task-comments-header">
+    <details class="task-attachments task-card-detail">
+      <summary class="task-comments-header">
         <span>${escapeHTML(t("task.attachments"))}</span>
         <small>${attachments.length}</small>
+      </summary>
+      <div class="task-card-detail-body">
+        ${attachments.length === 0
+          ? `<p class="task-comment-empty">${escapeHTML(t("task.noAttachments"))}</p>`
+          : renderAttachmentList(attachments, "task-attachment-list")
+        }
       </div>
-      ${attachments.length === 0
-        ? `<p class="task-comment-empty">${escapeHTML(t("task.noAttachments"))}</p>`
-        : renderAttachmentList(attachments, "task-attachment-list")
-      }
-    </div>
+    </details>
   `;
 }
 
@@ -3911,6 +3937,7 @@ languageOptions.forEach((option) => {
     if (!option.checked) return;
     window.AppI18n?.setLanguage?.(option.value);
     applyAppTranslations();
+    setSidebarCollapsed(appScreen?.classList.contains("sidebar-collapsed"), { persist: false });
     showToast(t("settings.language.changedTitle"), t("settings.language.changedBody"));
   });
 });
@@ -3966,6 +3993,12 @@ if (mobileSidebarOverlay) {
   mobileSidebarOverlay.addEventListener("click", closeMobileNav);
 }
 
+if (sidebarCollapseBtn) {
+  sidebarCollapseBtn.addEventListener("click", () => {
+    setSidebarCollapsed(!appScreen?.classList.contains("sidebar-collapsed"));
+  });
+}
+
 document.addEventListener("keydown", (event) => {
   if (event.key === "Escape") closeMobileNav();
 });
@@ -4001,6 +4034,7 @@ function checkExistingLogin() {
 migrateAppStorageIfNeeded();
 applyTheme(getSavedTheme());
 applyWorkspaceTheme(getSavedWorkspaceTheme(), { persist: false });
+setSidebarCollapsed(getSavedSidebarCollapsed(), { persist: false });
 setupNavigation();
 setupPrivateChatChannel();
 setupPresenceTracking();
@@ -4013,3 +4047,4 @@ renderNotifications();
 updateNotificationPermissionUI();
 maybeOpenMeetingFromHash();
 applyAppTranslations();
+setSidebarCollapsed(appScreen?.classList.contains("sidebar-collapsed"), { persist: false });

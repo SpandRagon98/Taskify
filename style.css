@@ -5071,6 +5071,388 @@ html[data-theme="dark"] .mobile-sidebar-overlay {
   background: rgba(0, 0, 0, 0.62);
 }
 
+/* ================= FOCUSED LAYOUT CLEANUP ================= */
+
+.sidebar-collapse-btn {
+  display: none;
+}
+
+@media (min-width: 1025px) {
+  .app-container {
+    align-items: flex-start;
+  }
+
+  .sidebar {
+    position: sticky;
+    top: 0;
+    width: 270px;
+    height: 100vh;
+    flex: 0 0 270px;
+    padding: 18px 14px;
+    overflow-x: hidden;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    transition: width 0.24s ease, flex-basis 0.24s ease, padding 0.24s ease;
+  }
+
+  .sidebar-collapse-btn {
+    position: absolute;
+    top: 70px;
+    right: 10px;
+    z-index: 8;
+    width: 32px;
+    height: 32px;
+    display: grid;
+    place-items: center;
+    padding: 0;
+    border: 1px solid var(--glass-border);
+    border-radius: 10px;
+    background: var(--glass-bg-strong);
+    color: var(--accent-color);
+    box-shadow: 0 10px 26px rgba(15, 23, 42, 0.18);
+    cursor: pointer;
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+    transition: transform 0.2s ease, background 0.2s ease, color 0.2s ease;
+  }
+
+  .sidebar-collapse-btn:hover {
+    transform: translateY(-1px);
+    background: var(--accent-soft);
+  }
+
+  .sidebar-collapse-btn svg {
+    width: 17px;
+    height: 17px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2.2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    transition: transform 0.24s ease;
+  }
+
+  .logo-section > div:last-child,
+  .nav-label,
+  .user-card > div:last-child {
+    overflow: hidden;
+    transition: opacity 0.16s ease, width 0.24s ease, visibility 0.16s ease;
+  }
+
+  .app-container.sidebar-collapsed .sidebar {
+    width: 86px;
+    flex-basis: 86px;
+    padding-inline: 14px;
+  }
+
+  .app-container.sidebar-collapsed .sidebar-collapse-btn svg {
+    transform: rotate(180deg);
+  }
+
+  .app-container.sidebar-collapsed .logo-section {
+    justify-content: center;
+    gap: 0;
+  }
+
+  .app-container.sidebar-collapsed .logo-section > div:last-child,
+  .app-container.sidebar-collapsed .nav-label,
+  .app-container.sidebar-collapsed .user-card > div:last-child {
+    width: 0;
+    opacity: 0;
+    visibility: hidden;
+  }
+
+  .app-container.sidebar-collapsed .logo-section > div:last-child,
+  .app-container.sidebar-collapsed .user-card > div:last-child {
+    display: none;
+  }
+
+  .app-container.sidebar-collapsed .nav-item {
+    justify-content: center;
+    gap: 0;
+    min-height: 48px;
+    padding-inline: 0;
+  }
+
+  .app-container.sidebar-collapsed .user-card {
+    justify-content: center;
+    gap: 0;
+    padding: 10px;
+  }
+
+  .app-container.sidebar-collapsed .user-avatar {
+    flex: 0 0 42px;
+  }
+
+  .logo-section {
+    margin-bottom: 18px;
+  }
+
+  .sidebar-nav {
+    gap: 5px;
+  }
+
+  .nav-item {
+    min-height: 41px;
+    padding: 10px 14px;
+  }
+
+  .sidebar-footer {
+    margin-top: 18px;
+  }
+
+  .user-card {
+    margin-bottom: 0;
+  }
+
+  .main-content {
+    min-width: 0;
+  }
+
+  .dashboard-grid {
+    grid-template-columns: minmax(310px, 0.72fr) minmax(620px, 1.55fr);
+    align-items: start;
+  }
+
+  .timeline-panel {
+    align-self: start;
+  }
+
+  .timeline-panel .timeline-list {
+    max-height: 210px;
+    overflow-y: auto;
+    padding-right: 4px;
+  }
+
+  .chat-page-panel,
+  .group-chat-panel {
+    min-height: calc(100vh - 142px);
+  }
+
+  .chat-page-panel {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .chat-shell-panel {
+    flex: 1 1 auto;
+    min-height: 0;
+    margin-top: 16px;
+  }
+
+  .chat-shell-panel > .panel-header,
+  .chat-shell-panel .chat-layout,
+  .chat-shell-panel .chat-window {
+    height: 100%;
+    min-height: 0;
+  }
+
+  .chat-shell-panel > .panel-header {
+    margin-bottom: 0;
+  }
+
+  .chat-layout {
+    min-height: 0;
+  }
+
+  .chat-window .chat-messages {
+    flex: 1 1 auto;
+    min-height: 240px;
+    max-height: none;
+  }
+
+  .group-chat-panel {
+    display: flex;
+    flex-direction: column;
+    margin-top: 0;
+  }
+
+  .group-chat-panel > #group-chat-messages {
+    flex: 1 1 auto;
+    min-height: 300px;
+    max-height: none;
+  }
+
+  .task-workspace-grid {
+    grid-template-columns: minmax(300px, 0.7fr) minmax(680px, 1.7fr);
+    gap: 18px;
+  }
+
+  .task-list-panel,
+  .task-board-panel {
+    min-width: 0;
+  }
+
+  .task-list-panel .task-list,
+  .task-board-panel .task-board {
+    max-height: calc(100vh - 205px);
+    overflow-y: auto;
+    padding-right: 4px;
+  }
+
+  .task-board {
+    gap: 12px;
+  }
+
+  .task-column {
+    padding: 13px;
+  }
+}
+
+.task-list-panel .panel-header,
+.task-board-panel .panel-header {
+  margin-bottom: 14px;
+}
+
+.task-item,
+.kanban-card {
+  gap: 9px;
+}
+
+.task-item {
+  padding: 12px;
+}
+
+.kanban-card {
+  padding: 12px;
+}
+
+.task-item-main,
+.kanban-card-main {
+  gap: 10px;
+}
+
+.task-card-meta-stack {
+  gap: 6px;
+}
+
+.priority-badge,
+.badge {
+  padding: 6px 10px;
+  font-size: 11px;
+}
+
+.task-tags {
+  gap: 6px;
+}
+
+.task-card-detail {
+  border-top: 1px solid rgba(226, 232, 240, 0.76);
+  padding-top: 0;
+}
+
+.task-card-detail + .task-card-detail {
+  margin-top: -2px;
+}
+
+.task-card-detail > summary {
+  min-height: 32px;
+  margin: 0;
+  padding: 8px 2px 6px;
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
+}
+
+.task-card-detail > summary::-webkit-details-marker {
+  display: none;
+}
+
+.task-card-detail > summary small {
+  margin-left: auto;
+}
+
+.task-card-detail > summary::after {
+  content: "";
+  width: 7px;
+  height: 7px;
+  margin-left: 8px;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: rotate(45deg) translateY(-2px);
+  transition: transform 0.18s ease;
+}
+
+.task-card-detail[open] > summary::after {
+  transform: rotate(225deg) translate(-1px, -1px);
+}
+
+.task-card-detail[open] > summary {
+  margin-bottom: 6px;
+}
+
+.task-card-detail-body,
+.task-card-detail > .task-comment-list,
+.task-card-detail > .task-comment-form {
+  animation: task-detail-reveal 0.16s ease;
+}
+
+.task-comment-list {
+  max-height: 150px;
+  overflow-y: auto;
+}
+
+.task-comment-form input {
+  min-width: 0;
+}
+
+@keyframes task-detail-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(-3px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+html[data-theme="dark"] .sidebar-collapse-btn {
+  background: #171717;
+  border-color: #303030;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.48);
+}
+
+html[data-theme="dark"] .task-card-detail {
+  border-top-color: #303030;
+}
+
+@media (max-width: 1280px) and (min-width: 1025px) {
+  .dashboard-grid {
+    grid-template-columns: minmax(280px, 0.68fr) minmax(560px, 1.45fr);
+  }
+
+  .task-workspace-grid {
+    grid-template-columns: minmax(280px, 0.68fr) minmax(590px, 1.5fr);
+  }
+
+  .team-insights-top {
+    grid-template-columns: minmax(0, 1.2fr) minmax(180px, 0.8fr);
+  }
+}
+
+@media (max-width: 1024px) {
+  .sidebar-collapse-btn {
+    display: none;
+  }
+
+  .chat-page-panel,
+  .group-chat-panel {
+    min-height: auto;
+  }
+
+  .chat-shell-panel {
+    margin-top: 16px;
+  }
+
+  .task-list-panel .task-list,
+  .task-board-panel .task-board {
+    max-height: none;
+    overflow: visible;
+    padding-right: 0;
+  }
+}
+
 /* ================= PREMIUM WORKSPACE THEMES ================= */
 
 body {

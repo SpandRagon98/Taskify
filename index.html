@@ -21,7 +21,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="icon" type="image/svg+xml" href="assets/taskify-logo.svg" />
-  <link rel="stylesheet" href="style.css?v=premium-themes-20260612" />
+  <link rel="stylesheet" href="style.css?v=layout-cleanup-20260612" />
 </head>
 <body>
   <!-- Welcome Screen -->
@@ -125,6 +125,11 @@
   <div id="app-screen" class="app-container hidden">
     <button type="button" id="mobile-sidebar-overlay" class="mobile-sidebar-overlay hidden" aria-label="Close navigation"></button>
     <aside id="app-sidebar" class="sidebar">
+      <button type="button" id="sidebar-collapse-btn" class="sidebar-collapse-btn" aria-label="Collapse sidebar" aria-controls="app-sidebar" aria-expanded="true" title="Collapse sidebar">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="m14 6-6 6 6 6" />
+        </svg>
+      </button>
       <div>
         <div class="logo-section">
           <div class="logo-box"><img src="assets/taskify-logo.svg" alt="Taskify logo" /></div>
@@ -336,7 +341,7 @@
       </section>
 
       <section id="chat-section" class="content-section">
-        <div class="panel full-height">
+        <div class="panel full-height chat-page-panel">
           <div class="panel-header meeting-panel-header">
             <h3 data-i18n="chat.oneToOne">1-to-1 Chat</h3>
             <button class="secondary-btn meeting-entry-btn" type="button" id="start-call-btn">
@@ -347,7 +352,7 @@
             </button>
           </div>
 
-          <div class="panel" style="margin-top:20px;">
+          <div class="panel chat-shell-panel">
             <div class="panel-header">
               <div class="chat-layout">
                 <div class="chat-users" id="chat-users-list"></div>
@@ -388,7 +393,7 @@
       </section>
 
       <section id="group-chat-section" class="content-section">
-        <div class="panel" style="margin-top:20px;">
+        <div class="panel group-chat-panel">
           <div class="panel-header meeting-panel-header">
             <h3 data-i18n="chat.groupTitle">Group Chat (Real-Time)</h3>
             <button class="secondary-btn meeting-entry-btn" type="button" id="group-meet-now-btn">
@@ -442,14 +447,14 @@
 
       <section id="tasks-section" class="content-section">
         <div class="task-workspace-grid">
-          <div class="panel">
+          <div class="panel task-list-panel">
             <div class="panel-header">
               <h3 data-i18n="task.list">Task List</h3>
             </div>
             <div class="task-list" id="recent-task-list"></div>
           </div>
 
-          <div class="panel">
+          <div class="panel task-board-panel">
             <div class="panel-header">
               <h3 data-i18n="task.board">Task Board</h3>
             </div>
@@ -1012,7 +1017,7 @@
   <script src="auth-config.js?v=credential-email-live-20260612"></script>
   <script src="auth.js?v=credential-email-live-20260612"></script>
   <script src="team-groups.js?v=user-id-auth-20260610"></script>
-  <script src="script.js?v=premium-themes-20260612"></script>
+  <script src="script.js?v=layout-cleanup-20260612"></script>
   <script src="group-chat.js?v=user-id-auth-20260610"></script>
   <script src="calendar.js?v=settings-language-20260424"></script>
 </body>
