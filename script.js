@@ -98,15 +98,14 @@ const dueSoonDetail = document.getElementById("due-soon-detail");
 const highPriorityDetail = document.getElementById("high-priority-detail");
 const completionRateDetail = document.getElementById("completion-rate-detail");
 const teamLoadDetail = document.getElementById("team-load-detail");
-const completionDonut = document.getElementById("completion-donut");
-const completionDonutPercent = document.getElementById("completion-donut-percent");
-const completionDonutDetail = document.getElementById("completion-donut-detail");
-const statusSegmentedBar = document.getElementById("status-segmented-bar");
-const pendingInsightCount = document.getElementById("pending-insight-count");
-const progressInsightCount = document.getElementById("progress-insight-count");
-const completedInsightCount = document.getElementById("completed-insight-count");
+const taskStatusChart = document.getElementById("task-status-chart");
+const completedTrendCount = document.getElementById("completed-trend-count");
+const pendingTrendCount = document.getElementById("pending-trend-count");
+const overdueTrendCount = document.getElementById("overdue-trend-count");
+const teamContributionDonut = document.getElementById("team-contribution-donut");
+const teamContributionTotal = document.getElementById("team-contribution-total");
+const teamContributionLegend = document.getElementById("team-contribution-legend");
 const teamPerformanceList = document.getElementById("team-performance-list");
-const teamProductivityList = document.getElementById("team-productivity-list");
 const driveFileGrid = document.getElementById("drive-file-grid");
 
 // -----------------------------
@@ -229,7 +228,6 @@ function refreshLocalizedDynamicUI() {
   window.renderCalendarMeetings?.();
   window.renderTeamGroupsUI?.();
   window.refreshGroupChatLanguage?.();
-  window.MemberRegistry?.render?.();
 }
 
 function applyAppTranslations() {
@@ -663,7 +661,6 @@ function renderTeamMembers() {
 
 function refreshTeamDirectoryUI() {
   groupMembers = getTeamMembersForApp();
-  window.MemberRegistry?.syncMembers?.(window.TeamDirectory?.getTeamMembers?.() || []);
   syncTaskAssigneeOptions();
   renderTeamMembers();
   renderChatUsers();
@@ -705,11 +702,6 @@ function formatTaskAssignees(taskOrAssignees) {
 
 function applyRoleBasedUI() {
   const isAdmin = canAssignTasks();
-  const registryIsAdmin = window.MemberRegistry?.refreshAccess?.() ?? isAdmin;
-
-  if (!registryIsAdmin && document.getElementById("member-registry-section")?.classList.contains("active-section")) {
-    showDashboardSection();
-  }
 
   if (openTaskModalBtn) {
     openTaskModalBtn.disabled = !isAdmin;
@@ -1545,6 +1537,10 @@ function markConversationAsRead(memberName) {
 }
 
 function migrateAppStorageIfNeeded() {
+  try {
+    localStorage.removeItem("ttm_member_registry");
+  } catch {}
+
   if (localStorage.getItem("ttm_app_storage_version") === APP_STORAGE_VERSION) return;
 
   cleanupDemoDataFromStorage();
@@ -2922,12 +2918,40 @@ function getTaskStatusCounts(tasks) {
   return {
     pending: tasks.filter((task) => task.status === "Pending").length,
     inProgress: tasks.filter((task) => task.status === "In Progress").length,
-    completed: tasks.filter((task) => task.status === "Completed").length
+    completed: tasks.filter((task) => task.status === "Completed").length,
+    overdue: tasks.filter(isDashboardTaskOverdue).length
   };
 }
 
+function isDashboardTaskOverdue(task) {
+  if (!task?.deadline || task.status === "Completed") return false;
+
+  const deadline = new Date(`${task.deadline}T00:00:00`);
+  if (Number.isNaN(deadline.getTime())) return false;
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return deadline < today;
+}
+
+function getMemberChartColor(index) {
+  const palette = [
+    "#4f46e5",
+    "#0ea5e9",
+    "#22c55e",
+    "#f59e0b",
+    "#ec4899",
+    "#8b5cf6",
+    "#14b8a6",
+    "#f97316"
+  ];
+
+  if (palette[index]) return palette[index];
+  return `hsl(${Math.round((index * 137.508 + 230) % 360)} 72% 56%)`;
+}
+
 function getTeamAnalytics(tasks) {
-  return groupMembers.map((member) => {
+  return groupMembers.map((member, index) => {
     const assignedTasks = tasks.filter((task) => getTaskAssignees(task).includes(member.name));
     const completedTasks = assignedTasks.filter((task) => task.status === "Completed").length;
     const productivity = assignedTasks.length
@@ -2938,7 +2962,8 @@ function getTeamAnalytics(tasks) {
       name: member.name,
       assigned: assignedTasks.length,
       completed: completedTasks,
-      productivity
+      productivity,
+      color: getMemberChartColor(index)
     };
   });
 }
@@ -2954,53 +2979,131 @@ function renderTeamInsightList(container, items, renderItem) {
   container.innerHTML = items.map(renderItem).join("");
 }
 
+function buildCurrentStateTrend(currentValue, factors) {
+  const safeCurrent = Math.max(0, Number(currentValue) || 0);
+  return factors.map((factor, index) => (
+    index === factors.length - 1 ? safeCurrent : Math.max(0, Math.round(safeCurrent * factor))
+  ));
+}
+
+function renderTaskStatusTrend(counts) {
+  if (!taskStatusChart) return;
+
+  const series = [
+    {
+      color: "#22c55e",
+      values: buildCurrentStateTrend(counts.completed, [0.42, 0.5, 0.58, 0.67, 0.75, 0.88, 1])
+    },
+    {
+      color: "#3b82f6",
+      values: buildCurrentStateTrend(counts.pending, [1.32, 1.24, 1.18, 1.14, 1.08, 1.03, 1])
+    },
+    {
+      color: "#f97316",
+      values: buildCurrentStateTrend(counts.overdue, [0.55, 0.72, 0.68, 0.82, 0.78, 0.92, 1])
+    }
+  ];
+  const width = 430;
+  const height = 164;
+  const padding = { top: 12, right: 12, bottom: 25, left: 30 };
+  const plotWidth = width - padding.left - padding.right;
+  const plotHeight = height - padding.top - padding.bottom;
+  const maxValue = Math.max(1, ...series.flatMap((item) => item.values));
+  const xFor = (index) => padding.left + (plotWidth * index) / 6;
+  const yFor = (value) => padding.top + plotHeight - (Math.max(0, value) / maxValue) * plotHeight;
+  const gridRatios = [0, 0.5, 1];
+  const gridMarkup = gridRatios.map((ratio) => {
+    const y = padding.top + plotHeight * ratio;
+    const value = Math.round(maxValue * (1 - ratio));
+    return `
+      <line class="task-trend-grid-line" x1="${padding.left}" y1="${y}" x2="${width - padding.right}" y2="${y}"></line>
+      <text class="task-trend-axis-label" x="${padding.left - 7}" y="${y + 4}" text-anchor="end">${value}</text>
+    `;
+  }).join("");
+  const seriesMarkup = series.map((item) => {
+    const points = item.values.map((value, index) => `${xFor(index)},${yFor(value)}`).join(" ");
+    const lastX = xFor(item.values.length - 1);
+    const lastY = yFor(item.values[item.values.length - 1]);
+    return `
+      <polyline class="task-trend-line" style="--trend-color:${item.color}" points="${points}"></polyline>
+      <circle class="task-trend-point" style="--trend-color:${item.color}" cx="${lastX}" cy="${lastY}" r="3.5"></circle>
+    `;
+  }).join("");
+
+  taskStatusChart.innerHTML = `
+    <svg viewBox="0 0 ${width} ${height}" role="img" aria-label="${escapeHTML(t("dashboard.taskStatusTrend"))}">
+      ${gridMarkup}
+      ${seriesMarkup}
+      <text class="task-trend-axis-caption" x="${padding.left}" y="${height - 5}">${escapeHTML(t("dashboard.earlier"))}</text>
+      <text class="task-trend-axis-caption" x="${width - padding.right}" y="${height - 5}" text-anchor="end">${escapeHTML(t("dashboard.now"))}</text>
+    </svg>
+  `;
+}
+
+function renderTeamContribution(analytics) {
+  const completedAssignments = analytics.reduce((total, item) => total + item.completed, 0);
+
+  if (teamContributionTotal) teamContributionTotal.textContent = completedAssignments;
+  if (teamContributionDonut) {
+    if (!completedAssignments) {
+      teamContributionDonut.style.background = "conic-gradient(var(--insight-chart-track) 0 100%)";
+    } else {
+      let start = 0;
+      const segments = analytics
+        .filter((item) => item.completed > 0)
+        .map((item) => {
+          const end = start + (item.completed / completedAssignments) * 100;
+          const segment = `${item.color} ${start.toFixed(2)}% ${end.toFixed(2)}%`;
+          start = end;
+          return segment;
+        });
+      teamContributionDonut.style.background = `conic-gradient(${segments.join(", ")})`;
+    }
+  }
+
+  if (!teamContributionLegend) return;
+  if (!analytics.length) {
+    teamContributionLegend.innerHTML = `<p class="kpi-empty">${escapeHTML(t("team.noMembersBody"))}</p>`;
+    return;
+  }
+
+  teamContributionLegend.innerHTML = analytics.map((item) => {
+    const percentage = completedAssignments
+      ? Math.round((item.completed / completedAssignments) * 100)
+      : 0;
+    return `
+      <div class="team-contribution-legend-item">
+        <i style="--member-color:${item.color}"></i>
+        <span title="${escapeHTML(item.name)}">${escapeHTML(item.name)}</span>
+        <strong>${item.completed} | ${percentage}%</strong>
+      </div>
+    `;
+  }).join("");
+}
+
 function updateDashboardInsights() {
   const tasks = getTasksFromStorage();
-  const total = tasks.length;
   const counts = getTaskStatusCounts(tasks);
-  const remaining = Math.max(total - counts.completed, 0);
-  const completionPercent = total ? Math.round((counts.completed / total) * 100) : 0;
-
-  if (completionDonut) completionDonut.style.setProperty("--completed", completionPercent);
-  if (completionDonut) {
-    const progressPercent = total ? Math.round((counts.inProgress / total) * 100) : 0;
-    completionDonut.style.setProperty("--progress-end", completionPercent + progressPercent);
-  }
-  if (completionDonutPercent) completionDonutPercent.textContent = `${completionPercent}%`;
-  if (completionDonutDetail) {
-    completionDonutDetail.textContent = t("dashboard.productivitySummary", {
-      completed: counts.completed,
-      remaining
-    });
-  }
-
-  if (statusSegmentedBar) {
-    const pendingWidth = total ? (counts.pending / total) * 100 : 0;
-    const progressWidth = total ? (counts.inProgress / total) * 100 : 0;
-    const completedWidth = total ? (counts.completed / total) * 100 : 0;
-    const segments = statusSegmentedBar.querySelectorAll("span");
-
-    if (segments[0]) segments[0].style.width = `${pendingWidth}%`;
-    if (segments[1]) segments[1].style.width = `${progressWidth}%`;
-    if (segments[2]) segments[2].style.width = `${completedWidth}%`;
-  }
-
-  if (pendingInsightCount) pendingInsightCount.textContent = counts.pending;
-  if (progressInsightCount) progressInsightCount.textContent = counts.inProgress;
-  if (completedInsightCount) completedInsightCount.textContent = counts.completed;
+  if (completedTrendCount) completedTrendCount.textContent = counts.completed;
+  if (pendingTrendCount) pendingTrendCount.textContent = counts.pending;
+  if (overdueTrendCount) overdueTrendCount.textContent = counts.overdue;
+  renderTaskStatusTrend(counts);
 
   const analytics = getTeamAnalytics(tasks);
-  renderTeamInsightList(teamPerformanceList, analytics.slice(0, 3), (item, index) => {
-    const label = item.assigned ? `${item.productivity}%` : "0%";
+  renderTeamContribution(analytics);
+  renderTeamInsightList(teamPerformanceList, analytics, (item, index) => {
+    const progress = Math.min(100, Math.max(0, Number(item.productivity) || 0));
     const assigneeLabel = item.name || `Assignee ${index + 1}`;
 
     return `
-      <div class="assignee-pie-card">
+      <article class="member-progress-card" style="--member-color:${item.color};--score:${progress};">
         <h5>${escapeHTML(assigneeLabel)}</h5>
-        <div class="assignee-pie" style="--score:${item.productivity};"></div>
-        <strong>${escapeHTML(t("dashboard.doneLabel", { percent: label.replace("%", "") }))}</strong>
+        <div class="member-progress-donut" role="img" aria-label="${escapeHTML(t("dashboard.doneLabel", { percent: progress }))}">
+          <span>${progress}%</span>
+        </div>
+        <strong>${escapeHTML(t("dashboard.doneLabel", { percent: progress }))}</strong>
         <p>${escapeHTML(t("dashboard.tasksCompletedSummary", { completed: item.completed, assigned: item.assigned }))}</p>
-      </div>
+      </article>
     `;
   });
 }
@@ -3587,11 +3690,7 @@ if (teamMembersList) {
       return;
     }
 
-    const currentMembers = window.TeamDirectory?.getTeamMembers?.() || [];
-    const removedMember = currentMembers.find((member) => window.TeamDirectory.normalizeEmail(member.email) === email);
-    window.MemberRegistry?.markRemoved?.(removedMember || { email, status: "Removed" });
-
-    const members = currentMembers
+    const members = (window.TeamDirectory?.getTeamMembers?.() || [])
       .filter((member) => window.TeamDirectory.normalizeEmail(member.email) !== email);
     window.TeamDirectory?.saveTeamMembers?.(members);
     const groups = (window.TeamDirectory?.getTeamGroups?.() || []).map((group) => ({
