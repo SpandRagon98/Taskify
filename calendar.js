@@ -232,11 +232,26 @@ function handleCalendarSubmit(event) {
   if (!validateMeetingForm()) return;
 
   const meetings = getCalendarMeetings();
-  meetings.push(getMeetingFormValues());
+  const meeting = getMeetingFormValues();
+  meetings.push(meeting);
   saveCalendarMeetings(meetings);
   calendarForm.reset();
   clearCalendarErrors();
   renderCalendarMeetings();
+
+  const meetingEventId = `meeting-scheduled-${meeting.id}`;
+  window.TaskifyEvents?.publish?.("meeting-scheduled", {
+    id: meetingEventId,
+    targets: meeting.participants,
+    title: calendarT("notifications.meetingScheduledTitle"),
+    message: `${meeting.title} - ${formatMeetingDate(meeting.date)} ${calendarT("calendar.at")} ${formatMeetingTime(meeting.time)}`,
+    source: calendarT("notifications.calendarSource")
+  });
+  window.addAppNotification?.(calendarT("notifications.meetingScheduledTitle"), `${meeting.title} - ${formatMeetingDate(meeting.date)} ${calendarT("calendar.at")} ${formatMeetingTime(meeting.time)}`, {
+    eventId: `created-${meetingEventId}`,
+    source: calendarT("notifications.calendarSource"),
+    type: "meeting-scheduled"
+  });
 }
 
 if (calendarForm) {

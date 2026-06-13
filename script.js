@@ -4,6 +4,12 @@ const SIDEBAR_COLLAPSE_KEY = "taskify-sidebar-collapsed";
 const FEEDBACK_STORAGE_KEY = "ttm_feedback";
 const WORKSPACE_THEME_FALLBACK_KEY = "taskify-theme";
 const DEFAULT_WORKSPACE_THEME = "taskify-purple";
+const APP_EVENT_CHANNEL_NAME = "ttm_app_event_channel";
+const APP_EVENT_STORAGE_KEY = "ttm_latest_app_event";
+const NOTIFICATION_SOUND_PATH = "assets/sounds/notification.mp3";
+const RINGTONE_PATH = "assets/sounds/ringtone.mp3";
+const APP_EVENT_TTL_MS = 2 * 60 * 1000;
+const CALL_RING_TIMEOUT_MS = 30 * 1000;
 const WORKSPACE_THEMES = new Set([
   "taskify-purple",
   "ocean-blue",
@@ -12,7 +18,10 @@ const WORKSPACE_THEMES = new Set([
   "rose-pink",
   "lavender",
   "sky-cyan",
-  "peach-pastel"
+  "peach-pastel",
+  "aurora-pastel",
+  "cotton-candy",
+  "soft-lime"
 ]);
 const MAX_ATTACHMENT_SIZE = 750 * 1024;
 const MAX_VOICE_SIZE = 1200 * 1024;
@@ -171,6 +180,12 @@ const feedbackForm = document.getElementById("feedback-form");
 const feedbackSubjectInput = document.getElementById("feedback-subject");
 const feedbackMessageInput = document.getElementById("feedback-message");
 const feedbackFormStatus = document.getElementById("feedback-form-status");
+const incomingCallOverlay = document.getElementById("incoming-call-overlay");
+const incomingCallTitle = document.getElementById("incoming-call-title");
+const incomingCallCaller = document.getElementById("incoming-call-caller");
+const incomingCallContext = document.getElementById("incoming-call-context");
+const answerIncomingCallBtn = document.getElementById("answer-incoming-call-btn");
+const declineIncomingCallBtn = document.getElementById("decline-incoming-call-btn");
 const teamMembersList = document.getElementById("team-members-list");
 const teamMemberForm = document.getElementById("team-member-form");
 const teamMemberNameInput = document.getElementById("team-member-name");
@@ -329,6 +344,17 @@ let privateVoiceRecorder = null;
 let privateVoiceChunks = [];
 let privateVoiceAttachment = null;
 let privateVoiceCancelled = false;
+let appEventChannel = null;
+let notificationAudio = null;
+let ringtoneAudio = null;
+let audioPrimed = false;
+let runtimeUserIdentity = null;
+let activeRingtoneEventId = "";
+let incomingCallEvent = null;
+let incomingCallTimer = null;
+let taskSearchDebounceTimer = null;
+const handledAppEventIds = new Map();
+const notificationEventIds = new Map();
 let privateAttachmentPreviewUrls = [];
 let currentDriveFiles = [];
 let activeMeeting = null;
@@ -425,6 +451,11 @@ function updateUserUI(user) {
   const userName = user?.name || "User";
   const userRole = normalizeUserRole(user?.role);
   const firstLetter = userName.charAt(0).toUpperCase();
+  runtimeUserIdentity = {
+    name: userName,
+    userId: user?.userId || "",
+    email: user?.email || ""
+  };
   applyWorkspaceTheme(getSavedWorkspaceTheme(user), { persist: false, user });
 
   if (sidebarUserName) sidebarUserName.textContent = userName;
@@ -468,7 +499,7 @@ function setInAppToastEnabled(value) {
 }
 
 function isNotificationSoundEnabled() {
-  return localStorage.getItem("ttm_notification_sound_enabled") === "true";
+  return localStorage.getItem("ttm_notification_sound_enabled") !== "false";
 }
 
 function setNotificationSoundEnabled(value) {
@@ -611,30 +642,91 @@ function populateSettingsUserFields(user = getUserFromLocalStorage()) {
   updateStorageStatusText(preferences);
 }
 
-function playNotificationSound() {
-  if (!isNotificationSoundEnabled()) return;
+function pruneEventCache(cache) {
+  const cutoff = Date.now() - APP_EVENT_TTL_MS;
+  cache.forEach((timestamp, eventId) => {
+    if (timestamp < cutoff) cache.delete(eventId);
+  });
+}
 
+function claimEventId(cache, eventId) {
+  if (!eventId) return true;
+  pruneEventCache(cache);
+  if (cache.has(eventId)) return false;
+  cache.set(eventId, Date.now());
+  return true;
+}
+
+function getNotificationAudio() {
+  if (notificationAudio) return notificationAudio;
+  notificationAudio = new Audio(NOTIFICATION_SOUND_PATH);
+  notificationAudio.preload = "auto";
+  notificationAudio.volume = 0.34;
+  return notificationAudio;
+}
+
+function getRingtoneAudio() {
+  if (ringtoneAudio) return ringtoneAudio;
+  ringtoneAudio = new Audio(RINGTONE_PATH);
+  ringtoneAudio.preload = "auto";
+  ringtoneAudio.loop = true;
+  ringtoneAudio.volume = 0.4;
+  return ringtoneAudio;
+}
+
+function safelyPlayAudio(audio, restart = true) {
+  if (!audio) return;
   try {
-    const AudioContext = window.AudioContext || window.webkitAudioContext;
-    if (!AudioContext) return;
+    if (restart) audio.currentTime = 0;
+    const playPromise = audio.play();
+    if (playPromise?.catch) playPromise.catch(() => {});
+  } catch {}
+}
 
-    const context = new AudioContext();
-    const oscillator = context.createOscillator();
-    const gain = context.createGain();
+function playNotificationSound(eventId = "") {
+  if (!isNotificationSoundEnabled()) return;
+  if (eventId && !claimEventId(notificationEventIds, `sound:${eventId}`)) return;
+  safelyPlayAudio(getNotificationAudio());
+}
 
-    oscillator.type = "sine";
-    oscillator.frequency.value = 820;
-    gain.gain.setValueAtTime(0.001, context.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.08, context.currentTime + 0.02);
-    gain.gain.exponentialRampToValueAtTime(0.001, context.currentTime + 0.18);
+function stopRingtone() {
+  activeRingtoneEventId = "";
+  if (!ringtoneAudio) return;
+  ringtoneAudio.pause();
+  ringtoneAudio.currentTime = 0;
+}
 
-    oscillator.connect(gain);
-    gain.connect(context.destination);
-    oscillator.start();
-    oscillator.stop(context.currentTime + 0.2);
-  } catch (error) {
-    console.warn("Notification sound could not be played:", error);
-  }
+function startRingtone(eventId) {
+  if (!isNotificationSoundEnabled()) return;
+  if (activeRingtoneEventId === eventId && !getRingtoneAudio().paused) return;
+  stopRingtone();
+  activeRingtoneEventId = eventId || "incoming-call";
+  safelyPlayAudio(getRingtoneAudio());
+}
+
+function primeNotificationAudio() {
+  if (audioPrimed) return;
+  audioPrimed = true;
+  [getNotificationAudio(), getRingtoneAudio()].forEach((audio) => {
+    const originalVolume = audio.volume;
+    audio.volume = 0;
+    const playPromise = audio.play();
+    if (!playPromise?.then) {
+      audio.pause();
+      audio.currentTime = 0;
+      audio.volume = originalVolume;
+      return;
+    }
+    playPromise
+      .then(() => {
+        audio.pause();
+        audio.currentTime = 0;
+        audio.volume = originalVolume;
+      })
+      .catch(() => {
+        audio.volume = originalVolume;
+      });
+  });
 }
 
 function showToast(title, message) {
@@ -767,6 +859,7 @@ function getUserFromLocalStorage() {
 
 function clearUserFromLocalStorage() {
   localStorage.removeItem("ttm_logged_in_user");
+  runtimeUserIdentity = null;
 }
 
 function normalizeUserRole(role) {
@@ -1452,7 +1545,8 @@ function getTasksFromStorage() {
   try {
     const tasks = normalizeTaskList(JSON.parse(savedTasks));
     if (!isValidTaskList(tasks)) throw new Error("Invalid task storage");
-    localStorage.setItem("ttm_tasks", JSON.stringify(tasks));
+    const normalizedTasks = JSON.stringify(tasks);
+    if (savedTasks !== normalizedTasks) localStorage.setItem("ttm_tasks", normalizedTasks);
     return tasks;
   } catch {
     const tasks = normalizeTaskList(cloneDefaultTasks());
@@ -1505,7 +1599,8 @@ function getChatsFromStorage() {
 
   try {
     const chats = normalizeChatConversations(JSON.parse(savedChats));
-    localStorage.setItem("ttm_chats", JSON.stringify(chats));
+    const normalizedChats = JSON.stringify(chats);
+    if (savedChats !== normalizedChats) localStorage.setItem("ttm_chats", normalizedChats);
     return chats;
   } catch {
     const chats = normalizeChatConversations(defaultChatConversations);
@@ -1543,6 +1638,7 @@ function normalizeChatMessage(message, index) {
   const fallbackTime = new Date(Date.now() - (index + 1) * 60000).toISOString();
 
   return {
+    id: message?.id || `message-${fallbackTime}-${index}`,
     sender: message?.sender || (messageType === "sent" ? getCurrentUserName() : "Team"),
     text: message?.text || "",
     type: messageType,
@@ -1795,7 +1891,7 @@ function scrollChatToBottom() {
 }
 
 function getCurrentUserName() {
-  const user = getUserFromLocalStorage();
+  const user = runtimeUserIdentity || getUserFromLocalStorage();
   return user?.name || user?.email || "User";
 }
 
@@ -1943,12 +2039,14 @@ async function sendMessage() {
   if (!messageText && attachments.length === 0) return;
 
   const chats = getChatsFromStorage();
+  const eventId = `private-message-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
   if (!chats[selectedChatMember]) {
     chats[selectedChatMember] = [];
   }
 
   chats[selectedChatMember].push({
+    id: eventId,
     sender: getCurrentUserName(),
     text: messageText,
     type: "sent",
@@ -1966,7 +2064,23 @@ async function sendMessage() {
   renderChatUsers();
   renderGoogleDriveFiles();
 
-  addNotification("New chat message", `${getCurrentUserName()} sent a message to ${selectedChatMember}`);
+  const preview = messageText || (attachments.length === 1 ? "Sent an attachment." : `Sent ${attachments.length} attachments.`);
+  publishTaskifyEvent("private-message", {
+    id: eventId,
+    target: selectedChatMember,
+    targets: [selectedChatMember],
+    title: t("notifications.privateMessageTitle"),
+    message: `${getCurrentUserName()}: ${preview}`,
+    source: t("notifications.chatSource")
+  });
+  addNotification(t("notifications.messageSentTitle"), `${t("notifications.sentTo")} ${selectedChatMember}`, {
+    eventId: `sent-${eventId}`,
+    source: t("notifications.chatSource"),
+    type: "private-message-sent",
+    sound: false,
+    browser: false,
+    store: false
+  });
 }
 
 function setPrivateVoicePanel(state, message = "") {
@@ -2052,6 +2166,7 @@ function sendPrivateVoiceMessage() {
   if (!chats[selectedChatMember]) chats[selectedChatMember] = [];
 
   chats[selectedChatMember].push({
+    id: `private-voice-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
     sender: getCurrentUserName(),
     text: "",
     type: "sent",
@@ -2067,7 +2182,21 @@ function sendPrivateVoiceMessage() {
   renderSelectedChatMessages();
   renderChatUsers();
   renderGoogleDriveFiles();
-  addNotification("Voice message sent", `${getCurrentUserName()} sent a voice message to ${selectedChatMember}`);
+  const voiceEvent = publishTaskifyEvent("private-message", {
+    target: selectedChatMember,
+    targets: [selectedChatMember],
+    title: t("notifications.privateMessageTitle"),
+    message: `${getCurrentUserName()}: ${t("notifications.voiceMessage")}`,
+    source: t("notifications.chatSource")
+  });
+  addNotification(t("notifications.messageSentTitle"), `${t("notifications.sentTo")} ${selectedChatMember}`, {
+    eventId: `sent-${voiceEvent.id}`,
+    source: t("notifications.chatSource"),
+    type: "private-message-sent",
+    sound: false,
+    browser: false,
+    store: false
+  });
 }
 
 // -----------------------------
@@ -2258,11 +2387,16 @@ function createMeetingPeerConnection() {
     const { remoteVideo, remoteName } = getMeetingElements();
     if (remoteVideo) remoteVideo.srcObject = event.streams[0];
     if (remoteName && activeMeeting?.remoteName) remoteName.textContent = activeMeeting.remoteName;
+    if (activeMeeting) activeMeeting.connected = true;
     setMeetingStatus("Connected.");
   };
 
   peer.onconnectionstatechange = () => {
-    if (peer.connectionState === "connected") setMeetingStatus("Connected.");
+    if (peer.connectionState === "connected") {
+      if (activeMeeting) activeMeeting.connected = true;
+      stopRingtone();
+      setMeetingStatus("Connected.");
+    }
     if (peer.connectionState === "disconnected") setMeetingStatus("Participant disconnected.");
     if (peer.connectionState === "failed") setMeetingStatus("Connection failed. Try starting a new meeting.", true);
   };
@@ -2335,6 +2469,7 @@ async function openMeetingSession(session, isHost = false) {
   }
 
   if (activeMeeting) leaveMeeting(false);
+  if (incomingCallEvent?.sessionId === session.id) clearIncomingCall();
 
   const elements = getMeetingElements();
   elements.modal.classList.remove("hidden");
@@ -2361,7 +2496,8 @@ async function openMeetingSession(session, isHost = false) {
     muted: false,
     cameraOff: false,
     sharingScreen: false,
-    remoteName: ""
+    remoteName: "",
+    connected: false
   };
   updateMeetingControls();
 
@@ -2462,12 +2598,14 @@ async function stopScreenShare() {
 
 function leaveMeeting(shouldSignal = true) {
   if (!activeMeeting) return;
+  const endingMeeting = activeMeeting;
   if (shouldSignal) postMeetingSignal({ type: "leave" });
-  stopStream(activeMeeting.localStream);
-  stopStream(activeMeeting.screenStream);
-  activeMeeting.peer?.close();
-  activeMeeting.channel?.close();
+  stopStream(endingMeeting.localStream);
+  stopStream(endingMeeting.screenStream);
+  endingMeeting.peer?.close();
+  endingMeeting.channel?.close();
   activeMeeting = null;
+  stopRingtone();
   const { modal, localVideo, remoteVideo } = getMeetingElements();
   if (localVideo) localVideo.srcObject = null;
   if (remoteVideo) remoteVideo.srcObject = null;
@@ -2476,6 +2614,14 @@ function leaveMeeting(shouldSignal = true) {
   }
   modal.classList.remove("meeting-expanded", "meeting-open-view");
   modal.classList.add("hidden");
+
+  if (shouldSignal) {
+    publishTaskifyEvent(endingMeeting.isHost && !endingMeeting.connected ? "call-cancelled" : "call-ended", {
+      id: `${endingMeeting.connected ? "ended" : "cancelled"}-${endingMeeting.session.id}-${Date.now()}`,
+      sessionId: endingMeeting.session.id,
+      targetEventId: endingMeeting.session.callEventId || ""
+    });
+  }
 }
 
 async function toggleMeetingExpand() {
@@ -2514,8 +2660,25 @@ async function copyMeetingLink() {
 
 function startAppMeeting(context) {
   const session = createMeetingSession(context);
+  const callEvent = publishTaskifyEvent("incoming-call", {
+    id: `incoming-call-${session.id}`,
+    sessionId: session.id,
+    callType: session.type,
+    target: session.target,
+    targets: session.type === "private" ? [session.target] : [],
+    title: session.title,
+    source: t("calls.source")
+  });
+  session.callEventId = callEvent.id;
+  upsertMeetingSession(session);
   openMeetingSession(session, true);
-  addNotification("Meeting started", `${getCurrentUserName()} started ${session.title}.`);
+  addNotification(t("calls.startedTitle"), `${getCurrentUserName()} - ${session.title}`, {
+    eventId: `started-${session.id}`,
+    source: t("calls.source"),
+    type: "call-started",
+    sound: false,
+    browser: false
+  });
 }
 
 function joinMeetingById(sessionId) {
@@ -2544,6 +2707,244 @@ window.startAppMeeting = startAppMeeting;
 // -----------------------------
 // NOTIFICATIONS
 // -----------------------------
+function normalizeIdentityValue(value) {
+  return String(value || "").trim().toLowerCase();
+}
+
+function getCurrentUserIdentity() {
+  const user = runtimeUserIdentity || getUserFromLocalStorage() || {};
+  return {
+    name: user.name || user.email || "User",
+    userId: user.userId || "",
+    email: user.email || ""
+  };
+}
+
+function getCurrentUserIdentityValues() {
+  const user = getCurrentUserIdentity();
+  return new Set([user.name, user.userId, user.email].map(normalizeIdentityValue).filter(Boolean));
+}
+
+function eventTargetsCurrentUser(targets) {
+  const targetValues = (Array.isArray(targets) ? targets : [targets])
+    .map(normalizeIdentityValue)
+    .filter(Boolean);
+  if (!targetValues.length) return false;
+  const currentValues = getCurrentUserIdentityValues();
+  return targetValues.some((target) => currentValues.has(target));
+}
+
+function createTaskifyEvent(type, detail = {}) {
+  const user = getCurrentUserIdentity();
+  return {
+    ...detail,
+    id: detail.id || `${type}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    type,
+    fromName: detail.fromName || user.name,
+    fromUserId: detail.fromUserId || user.userId,
+    fromEmail: detail.fromEmail || user.email,
+    createdAt: detail.createdAt || new Date().toISOString()
+  };
+}
+
+function publishTaskifyEvent(type, detail = {}) {
+  const appEvent = createTaskifyEvent(type, detail);
+  try {
+    appEventChannel?.postMessage(appEvent);
+  } catch {}
+  try {
+    localStorage.setItem(APP_EVENT_STORAGE_KEY, JSON.stringify(appEvent));
+  } catch {}
+  return appEvent;
+}
+
+function isEventFromCurrentUser(appEvent) {
+  const currentValues = getCurrentUserIdentityValues();
+  return [appEvent.fromName, appEvent.fromUserId, appEvent.fromEmail]
+    .map(normalizeIdentityValue)
+    .filter(Boolean)
+    .some((value) => currentValues.has(value));
+}
+
+function focusTaskifySection(sectionId) {
+  window.focus();
+  if (!sectionId) return;
+  const navItem = document.querySelector(`.nav-item[data-section="${sectionId}"]`);
+  if (navItem instanceof HTMLElement) navItem.click();
+}
+
+function clearIncomingCall() {
+  if (incomingCallTimer) clearTimeout(incomingCallTimer);
+  incomingCallTimer = null;
+  incomingCallEvent = null;
+  stopRingtone();
+  incomingCallOverlay?.classList.add("hidden");
+  document.body.classList.remove("incoming-call-open");
+}
+
+function showIncomingCall(appEvent) {
+  if (!incomingCallOverlay || incomingCallEvent) return;
+  if (activeMeeting) {
+    publishTaskifyEvent("call-declined", {
+      id: `busy-${appEvent.sessionId}-${Date.now()}`,
+      sessionId: appEvent.sessionId,
+      targetEventId: appEvent.id,
+      reason: "busy"
+    });
+    return;
+  }
+
+  incomingCallEvent = appEvent;
+  if (incomingCallTitle) incomingCallTitle.textContent = appEvent.title || t("calls.defaultTitle");
+  if (incomingCallCaller) {
+    incomingCallCaller.textContent = t("calls.from", { name: appEvent.fromName || t("calls.someone") });
+  }
+  if (incomingCallContext) {
+    incomingCallContext.textContent = appEvent.callType === "group"
+      ? t("calls.groupContext", { group: appEvent.target || t("chat.roomGeneral") })
+      : t("calls.privateContext");
+  }
+
+  incomingCallOverlay.classList.remove("hidden");
+  document.body.classList.add("incoming-call-open");
+  startRingtone(appEvent.id);
+  addNotification(t("calls.incoming"), `${appEvent.fromName || t("calls.someone")} - ${appEvent.title || t("calls.defaultTitle")}`, {
+    eventId: appEvent.id,
+    source: t("calls.source"),
+    type: "incoming-call",
+    sound: false,
+    toast: false,
+    sectionId: appEvent.callType === "group" ? "group-chat-section" : "chat-section"
+  });
+
+  incomingCallTimer = window.setTimeout(() => {
+    if (!incomingCallEvent || incomingCallEvent.id !== appEvent.id) return;
+    publishTaskifyEvent("call-timeout", {
+      id: `timeout-${appEvent.sessionId}-${Date.now()}`,
+      sessionId: appEvent.sessionId,
+      targetEventId: appEvent.id
+    });
+    clearIncomingCall();
+  }, CALL_RING_TIMEOUT_MS);
+}
+
+function answerIncomingCall() {
+  if (!incomingCallEvent) return;
+  const appEvent = incomingCallEvent;
+  clearIncomingCall();
+  publishTaskifyEvent("call-answered", {
+    id: `answered-${appEvent.sessionId}-${Date.now()}`,
+    sessionId: appEvent.sessionId,
+    targetEventId: appEvent.id
+  });
+  joinMeetingById(appEvent.sessionId);
+}
+
+function declineIncomingCall() {
+  if (!incomingCallEvent) return;
+  const appEvent = incomingCallEvent;
+  clearIncomingCall();
+  publishTaskifyEvent("call-declined", {
+    id: `declined-${appEvent.sessionId}-${Date.now()}`,
+    sessionId: appEvent.sessionId,
+    targetEventId: appEvent.id
+  });
+}
+
+function handleTaskifyEvent(appEvent) {
+  if (!appEvent?.id || !appEvent.type) return;
+  const createdAt = new Date(appEvent.createdAt || 0).getTime();
+  if (createdAt && Date.now() - createdAt > APP_EVENT_TTL_MS) return;
+  if (!claimEventId(handledAppEventIds, appEvent.id)) return;
+
+  const fromCurrentUser = isEventFromCurrentUser(appEvent);
+  if (["private-message", "group-message", "task-assigned", "meeting-scheduled", "incoming-call"].includes(appEvent.type) && fromCurrentUser) {
+    return;
+  }
+
+  if (appEvent.type === "private-message") {
+    if (!eventTargetsCurrentUser(appEvent.targets || appEvent.target)) return;
+    addNotification(appEvent.title || t("notifications.privateMessageTitle"), appEvent.message || "", {
+      eventId: appEvent.id,
+      source: appEvent.source || t("notifications.chatSource"),
+      type: appEvent.type,
+      sectionId: "chat-section"
+    });
+    return;
+  }
+
+  if (appEvent.type === "group-message") {
+    addNotification(appEvent.title || t("notifications.groupMessageTitle"), appEvent.message || "", {
+      eventId: appEvent.id,
+      source: appEvent.source || t("notifications.groupChatSource"),
+      type: appEvent.type,
+      sectionId: "group-chat-section"
+    });
+    return;
+  }
+
+  if (appEvent.type === "task-assigned") {
+    if (!eventTargetsCurrentUser(appEvent.targets)) return;
+    addNotification(appEvent.title || t("notifications.taskAssignedTitle"), appEvent.message || "", {
+      eventId: appEvent.id,
+      source: appEvent.source || t("notifications.taskSource"),
+      type: appEvent.type,
+      sectionId: "tasks-section"
+    });
+    return;
+  }
+
+  if (appEvent.type === "meeting-scheduled") {
+    const targets = Array.isArray(appEvent.targets) ? appEvent.targets.filter(Boolean) : [];
+    if (targets.length && !eventTargetsCurrentUser(targets)) return;
+    addNotification(appEvent.title || t("notifications.meetingScheduledTitle"), appEvent.message || "", {
+      eventId: appEvent.id,
+      source: appEvent.source || t("notifications.calendarSource"),
+      type: appEvent.type,
+      sectionId: "calendar-section"
+    });
+    return;
+  }
+
+  if (appEvent.type === "incoming-call") {
+    if (appEvent.callType === "private" && !eventTargetsCurrentUser(appEvent.targets || appEvent.target)) return;
+    showIncomingCall(appEvent);
+    return;
+  }
+
+  if (!appEvent.sessionId) return;
+
+  if (["call-cancelled", "call-ended", "call-timeout"].includes(appEvent.type)) {
+    if (incomingCallEvent?.sessionId === appEvent.sessionId) clearIncomingCall();
+    if (activeMeeting?.session?.id === appEvent.sessionId && appEvent.type === "call-ended") {
+      setMeetingStatus(t("calls.ended"));
+    }
+    return;
+  }
+
+  if (activeMeeting?.session?.id !== appEvent.sessionId) return;
+  if (appEvent.type === "call-answered" && activeMeeting.isHost) {
+    setMeetingStatus(t("calls.answeredBy", { name: appEvent.fromName || t("calls.participant") }));
+  }
+  if (appEvent.type === "call-declined" && activeMeeting.isHost) {
+    setMeetingStatus(t("calls.declinedBy", { name: appEvent.fromName || t("calls.participant") }), true);
+  }
+}
+
+function setupTaskifyEventChannel() {
+  if ("BroadcastChannel" in window) {
+    appEventChannel = new BroadcastChannel(APP_EVENT_CHANNEL_NAME);
+    appEventChannel.addEventListener("message", (event) => handleTaskifyEvent(event.data || {}));
+  }
+
+  window.addEventListener("storage", (event) => {
+    if (event.key !== APP_EVENT_STORAGE_KEY || !event.newValue) return;
+    try {
+      handleTaskifyEvent(JSON.parse(event.newValue));
+    } catch {}
+  });
+}
+
 function formatNotificationTime(timestamp) {
   const date = new Date(timestamp);
   if (Number.isNaN(date.getTime())) return "";
@@ -2573,18 +2974,21 @@ function renderNotifications() {
     return;
   }
 
+  const fragment = document.createDocumentFragment();
   notifications.forEach((notification) => {
     const item = document.createElement("div");
     item.className = "notification-item";
     item.innerHTML = `
-      <h4>${notification.title}</h4>
-      <p>${notification.message}</p>
+      <h4>${escapeHTML(notification.title)}</h4>
+      <p>${escapeHTML(notification.message)}</p>
+      ${notification.source ? `<span class="notification-source">${escapeHTML(notification.source)}</span>` : ""}
       <p style="margin-top:8px; font-size:12px; color:#94a3b8;">
         ${formatNotificationTime(notification.timestamp)}
       </p>
     `;
-    notificationList.appendChild(item);
+    fragment.appendChild(item);
   });
+  notificationList.appendChild(fragment);
 }
 
 function isBrowserNotificationEnabled() {
@@ -2600,17 +3004,27 @@ function updateNotificationPermissionUI() {
   if (!notificationPermissionStatus) return;
 
   let permissionText = t("notifications.permissionUnsupported");
+  let permission = "unsupported";
   if ("Notification" in window) {
-    permissionText = t("notifications.permissionStatus", { permission: Notification.permission });
+    permission = Notification.permission;
+    permissionText = t("notifications.permissionStatus", { permission });
   }
 
   const enabledText = isBrowserNotificationEnabled() ? t("notifications.enabled") : t("notifications.disabled");
   notificationPermissionStatus.textContent = `${permissionText} | ${t("notifications.appStatus", { status: enabledText })}`;
+  if (enableBrowserNotificationsBtn) enableBrowserNotificationsBtn.disabled = permission === "denied";
+  if (disableBrowserNotificationsBtn) disableBrowserNotificationsBtn.disabled = !isBrowserNotificationEnabled();
 }
 
 async function enableBrowserNotifications() {
   if (!("Notification" in window)) {
-    alert("This browser does not support notifications.");
+    showToast(t("notifications.unsupportedTitle"), t("notifications.permissionUnsupported"));
+    return;
+  }
+
+  if (Notification.permission === "denied") {
+    setBrowserNotificationEnabled(false);
+    showToast(t("notifications.permissionDeniedTitle"), t("notifications.permissionDeniedBody"));
     return;
   }
 
@@ -2618,49 +3032,78 @@ async function enableBrowserNotifications() {
 
   if (permission === "granted") {
     setBrowserNotificationEnabled(true);
-    alert("Browser notifications enabled.");
+    showToast(t("notifications.enabledTitle"), t("notifications.enabledBody"));
   } else {
     setBrowserNotificationEnabled(false);
-    alert("Notification permission was not granted.");
+    showToast(t("notifications.permissionDeniedTitle"), t("notifications.permissionDeniedBody"));
   }
 }
 
 function disableBrowserNotifications() {
   setBrowserNotificationEnabled(false);
-  alert("Browser notifications disabled for this app.");
+  showToast(t("notifications.disabledTitle"), t("notifications.disabledBody"));
 }
 
-function triggerBrowserNotification(title, message) {
+function triggerBrowserNotification(title, message, options = {}) {
+  // GitHub Pages can notify from an open/background tab; closed-app push needs a push backend.
   if (!("Notification" in window)) return;
   if (Notification.permission !== "granted") return;
   if (!isBrowserNotificationEnabled()) return;
-  if (document.visibilityState === "visible") return;
+  if (document.visibilityState === "visible" && document.hasFocus()) return;
 
-  new Notification(title, {
-    body: message
-  });
+  try {
+    const sourcePrefix = options.source ? `${options.source}: ` : "";
+    const notification = new Notification(title, {
+      body: `${sourcePrefix}${message}`.slice(0, 180),
+      icon: "assets/taskify-logo.svg",
+      badge: "assets/taskify-logo.svg",
+      tag: options.eventId || `${options.type || "taskify"}-${title}`,
+      renotify: false,
+      silent: true,
+      data: {
+        sectionId: options.sectionId || ""
+      }
+    });
+    notification.onclick = () => {
+      focusTaskifySection(notification.data?.sectionId);
+      notification.close();
+    };
+  } catch {}
 }
 
-function addNotification(title, message) {
+function addNotification(title, message, options = {}) {
+  const eventId = options.eventId || `notification-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  if (options.dedupe !== false && !claimEventId(notificationEventIds, `notification:${eventId}`)) return null;
+
   const notifications = getNotificationsFromStorage();
 
   const newNotification = {
-    id: Date.now(),
+    id: eventId,
     title,
     message,
+    source: options.source || "",
+    type: options.type || "app",
     timestamp: new Date().toISOString()
   };
 
-  notifications.unshift(newNotification);
-  saveNotificationsToStorage(notifications);
-  renderNotifications();
-  updateDashboardCounts();
-  triggerBrowserNotification(title, message);
-  playNotificationSound();
-  showToast(title, message);
+  if (options.store !== false) {
+    notifications.unshift(newNotification);
+    saveNotificationsToStorage(notifications.slice(0, 100));
+    renderNotifications();
+    updateDashboardCounts();
+  }
+  if (options.browser !== false) triggerBrowserNotification(title, message, { ...options, eventId });
+  if (options.sound !== false) playNotificationSound(eventId);
+  if (options.toast !== false) showToast(title, message);
+  return newNotification;
 }
 
 window.addAppNotification = addNotification;
+window.TaskifyEvents = {
+  publish: publishTaskifyEvent,
+  handle: handleTaskifyEvent
+};
+window.getTaskifyCurrentUserName = getCurrentUserName;
 
 // -----------------------------
 // TASKS
@@ -3363,7 +3806,22 @@ function createNewTask(taskData) {
   saveTasksToStorage(tasks);
   renderAllTaskUI();
 
-  addNotification("New task created", `${taskData.title} was assigned to ${assignedTo}`);
+  const assignmentEventId = `task-assigned-${newTask.id}`;
+  const assignedToCurrentUser = eventTargetsCurrentUser(assignees);
+  publishTaskifyEvent("task-assigned", {
+    id: assignmentEventId,
+    targets: assignees,
+    title: t("notifications.taskAssignedTitle"),
+    message: `${taskData.title} - ${assignedTo}`,
+    source: t("notifications.taskSource")
+  });
+  addNotification(t("notifications.taskCreatedTitle"), `${taskData.title} - ${assignedTo}`, {
+    eventId: `created-${assignmentEventId}`,
+    source: t("notifications.taskSource"),
+    type: "task-created",
+    sound: assignedToCurrentUser,
+    browser: assignedToCurrentUser
+  });
 }
 
 function getTaskFormValues() {
@@ -4015,6 +4473,8 @@ if (notificationSoundToggle) {
   notificationSoundToggle.checked = isNotificationSoundEnabled();
   notificationSoundToggle.addEventListener("change", function () {
     setNotificationSoundEnabled(notificationSoundToggle.checked);
+    if (!notificationSoundToggle.checked) stopRingtone();
+    if (notificationSoundToggle.checked) playNotificationSound("settings-preview");
   });
 }
 
@@ -4073,7 +4533,10 @@ if (resetAppDataBtn) {
 
 if (taskSearchInput) {
   taskSearchInput.addEventListener("input", function () {
-    renderTaskSearchResults(taskSearchInput.value);
+    if (taskSearchDebounceTimer) clearTimeout(taskSearchDebounceTimer);
+    taskSearchDebounceTimer = window.setTimeout(() => {
+      renderTaskSearchResults(taskSearchInput.value);
+    }, 110);
   });
 }
 
@@ -4093,6 +4556,26 @@ if (mobileMenuBtn) {
 if (mobileSidebarOverlay) {
   mobileSidebarOverlay.addEventListener("click", closeMobileNav);
 }
+
+if (answerIncomingCallBtn) answerIncomingCallBtn.addEventListener("click", answerIncomingCall);
+if (declineIncomingCallBtn) declineIncomingCallBtn.addEventListener("click", declineIncomingCall);
+
+document.addEventListener("pointerdown", primeNotificationAudio, { once: true, capture: true });
+document.addEventListener("keydown", primeNotificationAudio, { once: true, capture: true });
+
+window.addEventListener("pagehide", () => {
+  stopRingtone();
+  if (notificationAudio) notificationAudio.pause();
+  if (activeMeeting) {
+    const endingMeeting = activeMeeting;
+    publishTaskifyEvent(endingMeeting.isHost && !endingMeeting.connected ? "call-cancelled" : "call-ended", {
+      id: `pagehide-${endingMeeting.session.id}-${Date.now()}`,
+      sessionId: endingMeeting.session.id,
+      targetEventId: endingMeeting.session.callEventId || ""
+    });
+  }
+  appEventChannel?.close();
+});
 
 if (sidebarCollapseBtn) {
   sidebarCollapseBtn.addEventListener("click", () => {
@@ -4140,6 +4623,7 @@ applyTheme(getSavedTheme());
 applyWorkspaceTheme(getSavedWorkspaceTheme(), { persist: false });
 setSidebarCollapsed(getSavedSidebarCollapsed(), { persist: false });
 setupNavigation();
+setupTaskifyEventChannel();
 setupPrivateChatChannel();
 setupPresenceTracking();
 checkExistingLogin();

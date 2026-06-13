@@ -21,7 +21,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="icon" type="image/svg+xml" href="assets/taskify-logo.svg" />
-  <link rel="stylesheet" href="style.css?v=responsive-help-20260613" />
+  <link rel="stylesheet" href="style.css?v=alerts-themes-20260613" />
 </head>
 <body>
   <!-- Welcome Screen -->
@@ -686,6 +686,24 @@
                         <span class="workspace-theme-name">Peach Pastel</span>
                         <span class="workspace-theme-check" aria-hidden="true"></span>
                       </label>
+                      <label class="workspace-theme-option theme-preview-aurora-pastel">
+                        <input type="radio" name="workspace-theme" value="aurora-pastel" />
+                        <span class="workspace-theme-swatch" aria-hidden="true"></span>
+                        <span class="workspace-theme-name">Aurora Pastel</span>
+                        <span class="workspace-theme-check" aria-hidden="true"></span>
+                      </label>
+                      <label class="workspace-theme-option theme-preview-cotton-candy">
+                        <input type="radio" name="workspace-theme" value="cotton-candy" />
+                        <span class="workspace-theme-swatch" aria-hidden="true"></span>
+                        <span class="workspace-theme-name">Cotton Candy</span>
+                        <span class="workspace-theme-check" aria-hidden="true"></span>
+                      </label>
+                      <label class="workspace-theme-option theme-preview-soft-lime">
+                        <input type="radio" name="workspace-theme" value="soft-lime" />
+                        <span class="workspace-theme-swatch" aria-hidden="true"></span>
+                        <span class="workspace-theme-name">Soft Lime</span>
+                        <span class="workspace-theme-check" aria-hidden="true"></span>
+                      </label>
                     </div>
                     <p class="settings-control-status" data-i18n="settings.themes.localNote">Saved only for this user on this device.</p>
                   </div>
@@ -885,6 +903,9 @@
                     <input type="checkbox" id="notification-sound-toggle" />
                     <span data-i18n="settings.playSound">Play notification sound</span>
                   </label>
+                  <p class="settings-control-status" data-i18n="settings.notifications.backgroundLimit">
+                    Browser alerts work while Taskify is open. Closed-app push requires a notification backend.
+                  </p>
                 </div>
               </div>
             </article>
@@ -1046,13 +1067,29 @@
     </div>
   </div>
 
+  <div id="incoming-call-overlay" class="modal-overlay incoming-call-overlay hidden">
+    <div class="incoming-call-card" role="dialog" aria-modal="true" aria-labelledby="incoming-call-title">
+      <div class="incoming-call-pulse" aria-hidden="true">
+        <span class="incoming-call-icon"></span>
+      </div>
+      <p class="incoming-call-kicker" data-i18n="calls.incoming">Incoming call</p>
+      <h3 id="incoming-call-title">Taskify Call</h3>
+      <p id="incoming-call-caller" class="incoming-call-caller"></p>
+      <p id="incoming-call-context" class="incoming-call-context"></p>
+      <div class="incoming-call-actions">
+        <button type="button" class="danger-btn" id="decline-incoming-call-btn" data-i18n="calls.decline">Decline</button>
+        <button type="button" class="primary-btn" id="answer-incoming-call-btn" data-i18n="calls.answer">Answer</button>
+      </div>
+    </div>
+  </div>
+
   <div id="toast-container" class="toast-container"></div>
-  <script src="translations.js?v=responsive-help-20260613"></script>
+  <script src="translations.js?v=alerts-themes-20260613"></script>
   <script src="auth-config.js?v=credential-email-live-20260612"></script>
   <script src="auth.js?v=credential-email-live-20260612"></script>
   <script src="team-groups.js?v=user-id-auth-20260610"></script>
-  <script src="script.js?v=responsive-help-20260613"></script>
-  <script src="group-chat.js?v=user-id-auth-20260610"></script>
-  <script src="calendar.js?v=settings-language-20260424"></script>
+  <script src="script.js?v=alerts-themes-20260613"></script>
+  <script src="group-chat.js?v=alerts-themes-20260613"></script>
+  <script src="calendar.js?v=alerts-themes-20260613"></script>
 </body>
 </html>

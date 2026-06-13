@@ -269,6 +269,9 @@ function renderGroupAttachmentPreview() {
 }
 
 function getCurrentGroupUserName() {
+  if (typeof window.getTaskifyCurrentUserName === "function") {
+    return window.getTaskifyCurrentUserName();
+  }
   try {
     const savedUser = localStorage.getItem("ttm_logged_in_user");
     const user = savedUser ? JSON.parse(savedUser) : null;
@@ -475,8 +478,23 @@ async function sendGroupMessage() {
   broadcastGroupTyping(false);
   renderTypingIndicator("");
 
+  const groupEvent = window.TaskifyEvents?.publish?.("group-message", {
+    id: `group-message-${message.id}`,
+    room,
+    title: groupT("notifications.groupMessageTitle"),
+    message: `${sender}: ${text || (attachments.length === 1 ? groupT("notifications.attachment") : groupT("notifications.attachments", { count: attachments.length }))}`,
+    source: `${groupT("notifications.groupChatSource")} - ${getGroupRoomLabel(room)}`
+  });
+
   if (typeof window.addAppNotification === "function") {
-    window.addAppNotification("Group chat", `Message sent in ${GROUP_ROOMS[room].label}.`);
+    window.addAppNotification(groupT("notifications.messageSentTitle"), `${groupT("notifications.sentIn")} ${getGroupRoomLabel(room)}.`, {
+      eventId: `sent-${groupEvent?.id || message.id}`,
+      source: groupT("notifications.groupChatSource"),
+      type: "group-message-sent",
+      sound: false,
+      browser: false,
+      store: false
+    });
   }
 
   if (typeof window.renderGoogleDriveFiles === "function") {
@@ -564,20 +582,36 @@ function sendGroupVoiceMessage() {
   if (!groupVoiceAttachment) return;
 
   const room = activeGroupRoom;
-  appendGroupMessage(room, {
+  const voiceMessage = {
     id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
     sender: getCurrentGroupUserName(),
     text: "",
     timestamp: new Date().toISOString(),
     attachments: [groupVoiceAttachment]
-  });
+  };
+  appendGroupMessage(room, voiceMessage);
 
   groupVoiceAttachment = null;
   groupVoiceChunks = [];
   setGroupVoicePanel("idle");
 
+  const groupEvent = window.TaskifyEvents?.publish?.("group-message", {
+    id: `group-message-${voiceMessage.id}`,
+    room,
+    title: groupT("notifications.groupMessageTitle"),
+    message: `${voiceMessage.sender}: ${groupT("notifications.voiceMessage")}`,
+    source: `${groupT("notifications.groupChatSource")} - ${getGroupRoomLabel(room)}`
+  });
+
   if (typeof window.addAppNotification === "function") {
-    window.addAppNotification("Group chat", `Voice message sent in ${GROUP_ROOMS[room].label}.`);
+    window.addAppNotification(groupT("notifications.messageSentTitle"), `${groupT("notifications.sentIn")} ${getGroupRoomLabel(room)}.`, {
+      eventId: `sent-${groupEvent?.id || voiceMessage.id}`,
+      source: groupT("notifications.groupChatSource"),
+      type: "group-message-sent",
+      sound: false,
+      browser: false,
+      store: false
+    });
   }
 
   if (typeof window.renderGoogleDriveFiles === "function") {
