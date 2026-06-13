@@ -5120,26 +5120,27 @@ html[data-theme="dark"] .search-result-item span {
   pointer-events: none;
 }
 
-.loading-video {
+.startup-brand {
+  display: grid;
+  place-items: center;
+  gap: 10px;
+  color: #ffffff;
+  text-align: center;
+  animation: taskify-brand-arrive 0.55s ease both;
+}
+
+.startup-brand img {
   display: block;
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  background: #050716;
+  width: clamp(112px, 11vw, 156px);
+  height: auto;
+  filter: drop-shadow(0 18px 34px rgba(54, 92, 246, 0.28));
 }
 
-.loading-screen.video-unavailable::after {
-  content: "";
-  width: 56px;
-  height: 56px;
-  border: 3px solid rgba(255, 255, 255, 0.16);
-  border-top-color: #9b7cff;
-  border-radius: 50%;
-  animation: taskify-loading-spin 0.8s linear infinite;
-}
-
-.loading-screen.video-unavailable .loading-video {
-  display: none;
+.startup-brand span {
+  font-size: clamp(25px, 2.2vw, 34px);
+  font-weight: 800;
+  letter-spacing: -0.035em;
+  text-shadow: 0 12px 30px rgba(99, 76, 235, 0.34);
 }
 
 #login-screen.login-screen,
@@ -5268,15 +5269,26 @@ html[data-theme="dark"] .search-result-item span {
   image-rendering: auto;
 }
 
-@keyframes taskify-loading-spin {
+@keyframes taskify-brand-arrive {
+  from {
+    transform: translateY(8px) scale(0.96);
+  }
   to {
-    transform: rotate(360deg);
+    transform: translateY(0) scale(1);
   }
 }
 
 @media (max-width: 600px) {
-  .loading-video {
-    object-fit: contain;
+  .startup-brand {
+    gap: 8px;
+  }
+
+  .startup-brand img {
+    width: 112px;
+  }
+
+  .startup-brand span {
+    font-size: 25px;
   }
 
   #login-screen.login-screen,
@@ -5300,6 +5312,10 @@ html[data-theme="dark"] .search-result-item span {
 @media (prefers-reduced-motion: reduce) {
   .loading-screen {
     transition: none;
+  }
+
+  .startup-brand {
+    animation: none;
   }
 }
 
@@ -7497,4 +7513,48 @@ html[data-theme="dark"] .incoming-call-card {
     padding: 26px 20px 20px;
     border-radius: 24px;
   }
+}
+
+/* Settings actions inherit the current member's workspace theme. */
+#settings-section .settings-actions-row .secondary-btn,
+#settings-section .settings-actions-row .danger-btn,
+#settings-section .settings-category-action {
+  border: 1px solid rgba(var(--accent-rgb), 0.38);
+  background: var(--accent-gradient);
+  color: #ffffff;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.24),
+    0 12px 28px rgba(var(--accent-rgb), 0.24);
+}
+
+#settings-section .settings-actions-row .secondary-btn:hover:not(:disabled),
+#settings-section .settings-actions-row .danger-btn:hover:not(:disabled),
+#settings-section .settings-category-action:hover:not(:disabled) {
+  border-color: rgba(var(--accent-rgb), 0.58);
+  color: #ffffff;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.3),
+    0 16px 34px rgba(var(--accent-rgb), 0.32);
+}
+
+#settings-section .settings-actions-row .secondary-btn:focus-visible,
+#settings-section .settings-actions-row .danger-btn:focus-visible,
+#settings-section .settings-category-action:focus-visible {
+  outline: 3px solid rgba(var(--accent-rgb), 0.28);
+  outline-offset: 3px;
+}
+
+#settings-section .settings-actions-row .secondary-btn:disabled,
+#settings-section .settings-actions-row .danger-btn:disabled,
+#settings-section .settings-category-action:disabled {
+  cursor: not-allowed;
+  opacity: 0.48;
+  box-shadow: none;
+}
+
+html[data-theme="dark"] #settings-section .settings-actions-row .secondary-btn,
+html[data-theme="dark"] #settings-section .settings-actions-row .danger-btn,
+html[data-theme="dark"] #settings-section .settings-category-action {
+  border-color: rgba(var(--accent-rgb), 0.5);
+  color: #ffffff;
 }

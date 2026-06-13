@@ -25,13 +25,12 @@ const WORKSPACE_THEMES = new Set([
 ]);
 const MAX_ATTACHMENT_SIZE = 750 * 1024;
 const MAX_VOICE_SIZE = 1200 * 1024;
-const INITIAL_LOADING_FALLBACK_MS = 13000;
+const INITIAL_LOADING_DURATION_MS = 2400;
 
 // -----------------------------
 // BASIC ELEMENTS
 // -----------------------------
 const loadingScreen = document.getElementById("loading-screen");
-const loadingVideo = document.getElementById("loading-video");
 const loginScreen = document.getElementById("login-screen");
 const joinScreen = document.getElementById("join-screen");
 const welcomeScreen = document.getElementById("welcome-screen");
@@ -414,7 +413,6 @@ function finishInitialLoading() {
   initialLoadingResolved = true;
   if (initialLoadingTimer) window.clearTimeout(initialLoadingTimer);
   initialLoadingTimer = null;
-  loadingVideo?.pause();
 
   if (!loadingScreen) {
     checkExistingLogin();
@@ -429,33 +427,18 @@ function finishInitialLoading() {
 }
 
 function beginInitialLoading() {
-  if (!loadingScreen || !loadingVideo) {
+  if (!loadingScreen) {
     finishInitialLoading();
     return;
   }
 
-  loadingScreen.classList.remove("hidden", "is-fading", "video-unavailable");
+  loadingScreen.classList.remove("hidden", "is-fading");
   if (welcomeScreen) welcomeScreen.classList.add("hidden");
   if (loginScreen) loginScreen.classList.add("hidden");
   if (joinScreen) joinScreen.classList.add("hidden");
   if (appScreen) appScreen.classList.add("hidden");
 
-  loadingVideo.addEventListener("ended", finishInitialLoading, { once: true });
-  loadingVideo.addEventListener("error", () => {
-    loadingScreen.classList.add("video-unavailable");
-    window.setTimeout(finishInitialLoading, 700);
-  }, { once: true });
-
-  initialLoadingTimer = window.setTimeout(finishInitialLoading, INITIAL_LOADING_FALLBACK_MS);
-  const playPromise = loadingVideo.play();
-  if (playPromise?.catch) {
-    playPromise.catch(() => {
-      loadingScreen.classList.add("video-unavailable");
-      window.setTimeout(finishInitialLoading, 700);
-    });
-  }
-
-  if (loadingVideo.ended) finishInitialLoading();
+  initialLoadingTimer = window.setTimeout(finishInitialLoading, INITIAL_LOADING_DURATION_MS);
 }
 
 function setMobileNavOpen(isOpen) {
