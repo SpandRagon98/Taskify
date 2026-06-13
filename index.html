@@ -20,42 +20,22 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="icon" type="image/svg+xml" href="assets/taskify-logo.svg" />
-  <link rel="stylesheet" href="style.css?v=alerts-themes-20260613" />
+  <link rel="icon" type="image/png" href="assets/taskify-brand-logo.png" />
+  <link rel="apple-touch-icon" href="assets/taskify-brand-logo.png" />
+  <link rel="stylesheet" href="style.css?v=brand-loading-20260613" />
 </head>
 <body>
-  <!-- Welcome Screen -->
-  <div id="welcome-screen" class="welcome-screen">
-    <section class="welcome-card" aria-labelledby="welcome-title">
-      <img class="welcome-logo" src="assets/taskify-logo.svg" alt="Taskify logo" />
-      <p class="welcome-kicker" data-i18n="welcome.kicker">Premium task management workspace</p>
-      <h1 id="welcome-title" data-i18n="welcome.title">Welcome to Taskify</h1>
-      <h2 data-i18n="welcome.subtitle">Your task manager assistant</h2>
-      <p class="welcome-description" data-i18n="welcome.description">
-        Organize tasks, collaborate with your team, manage meetings, and stay focused from one clean workspace.
-      </p>
-      <div class="welcome-features" aria-label="Taskify highlights">
-        <div class="welcome-feature">
-          <span aria-hidden="true"></span>
-          <p data-i18n="welcome.featureTasks">Smart task tracking and team collaboration</p>
-        </div>
-        <div class="welcome-feature">
-          <span aria-hidden="true"></span>
-          <p data-i18n="welcome.featureWorkspace">Chat, meetings, calendar, and file sharing in one place</p>
-        </div>
-        <div class="welcome-feature">
-          <span aria-hidden="true"></span>
-          <p data-i18n="welcome.featurePlanning">Clean workspace for faster planning and execution</p>
-        </div>
-      </div>
-      <button type="button" id="welcome-start-btn" class="welcome-cta" data-i18n="welcome.cta">Get Started</button>
-    </section>
+  <!-- Premium startup video -->
+  <div id="loading-screen" class="loading-screen" aria-label="Taskify is loading">
+    <video id="loading-video" class="loading-video" autoplay muted playsinline preload="auto">
+      <source src="assets/taskify-premium-loading-screen.mp4" type="video/mp4" />
+    </video>
   </div>
 
   <!-- Login Screen -->
   <div id="login-screen" class="login-screen hidden">
     <form id="login-form" class="login-card">
-      <div class="login-logo"><img src="assets/taskify-logo.svg" alt="Taskify logo" /></div>
+      <div class="login-logo"><img src="assets/taskify-brand-logo.png" alt="Taskify logo" /></div>
       <h1 data-i18n="app.title">Taskify</h1>
       <p class="login-subtitle" data-i18n="auth.signIn">Sign in to continue</p>
 
@@ -93,7 +73,7 @@
   <!-- Member Onboarding -->
   <div id="join-screen" class="login-screen hidden">
     <form id="join-form" class="login-card">
-      <div class="login-logo"><img src="assets/taskify-logo.svg" alt="Taskify logo" /></div>
+      <div class="login-logo"><img src="assets/taskify-brand-logo.png" alt="Taskify logo" /></div>
       <h1 data-i18n="auth.joinTitle">Join Taskify</h1>
       <p class="login-subtitle" data-i18n="auth.joinSubtitle">Create your member access credentials</p>
 
@@ -132,7 +112,7 @@
       </button>
       <div>
         <div class="logo-section">
-          <div class="logo-box"><img src="assets/taskify-logo.svg" alt="Taskify logo" /></div>
+          <div class="logo-box"><img src="assets/taskify-brand-logo.png" alt="Taskify logo" /></div>
           <div>
             <h2 data-i18n="app.title">Taskify</h2>
             <p data-i18n="app.workspace">Personal Company Workspace</p>
@@ -1084,12 +1064,12 @@
   </div>
 
   <div id="toast-container" class="toast-container"></div>
-  <script src="translations.js?v=alerts-themes-20260613"></script>
+  <script src="translations.js?v=brand-loading-20260613"></script>
   <script src="auth-config.js?v=credential-email-live-20260612"></script>
   <script src="auth.js?v=credential-email-live-20260612"></script>
   <script src="team-groups.js?v=user-id-auth-20260610"></script>
-  <script src="script.js?v=alerts-themes-20260613"></script>
-  <script src="group-chat.js?v=alerts-themes-20260613"></script>
-  <script src="calendar.js?v=alerts-themes-20260613"></script>
+  <script src="script.js?v=brand-loading-20260613"></script>
+  <script src="group-chat.js?v=brand-loading-20260613"></script>
+  <script src="calendar.js?v=brand-loading-20260613"></script>
 </body>
 </html>

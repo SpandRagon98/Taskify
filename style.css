@@ -5097,6 +5097,212 @@ html[data-theme="dark"] .search-result-item span {
   }
 }
 
+/* ================= TASKIFY BRAND LOADING + PRE-AUTH ================= */
+
+.loading-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 20000;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 28% 30%, rgba(109, 57, 238, 0.2), transparent 38%),
+    radial-gradient(circle at 78% 66%, rgba(24, 117, 255, 0.16), transparent 38%),
+    #050716;
+  opacity: 1;
+  transition: opacity 0.32s ease, visibility 0.32s ease;
+}
+
+.loading-screen.is-fading {
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.loading-video {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background: #050716;
+}
+
+.loading-screen.video-unavailable::after {
+  content: "";
+  width: 56px;
+  height: 56px;
+  border: 3px solid rgba(255, 255, 255, 0.16);
+  border-top-color: #9b7cff;
+  border-radius: 50%;
+  animation: taskify-loading-spin 0.8s linear infinite;
+}
+
+.loading-screen.video-unavailable .loading-video {
+  display: none;
+}
+
+#login-screen.login-screen,
+#join-screen.login-screen {
+  position: relative;
+  isolation: isolate;
+  min-height: 100vh;
+  min-height: 100svh;
+  overflow-x: hidden;
+  overflow-y: auto;
+  background:
+    radial-gradient(circle at 18% 24%, rgba(119, 67, 246, 0.24), transparent 34%),
+    radial-gradient(circle at 82% 72%, rgba(18, 113, 245, 0.18), transparent 36%),
+    linear-gradient(145deg, #060714 0%, #090a1f 48%, #03040b 100%);
+}
+
+#login-screen.login-screen::before,
+#join-screen.login-screen::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    linear-gradient(115deg, transparent 22%, rgba(139, 92, 246, 0.07) 48%, transparent 72%),
+    radial-gradient(circle at 50% 12%, rgba(122, 81, 238, 0.11), transparent 28%);
+}
+
+#login-screen .login-card,
+#join-screen .login-card {
+  width: min(100%, 440px);
+  padding: 34px 36px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 28px;
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.07));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.18),
+    0 34px 90px rgba(0, 0, 0, 0.48),
+    0 12px 42px rgba(91, 69, 229, 0.16);
+  backdrop-filter: blur(24px) saturate(135%);
+  -webkit-backdrop-filter: blur(24px) saturate(135%);
+}
+
+#login-screen .login-card::before,
+#join-screen .login-card::before {
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.12), transparent 42%, rgba(83, 79, 226, 0.05));
+  opacity: 1;
+}
+
+#login-screen .login-logo,
+#join-screen .login-logo {
+  width: 112px;
+  height: 112px;
+  margin-bottom: 14px;
+  box-shadow: 0 18px 44px rgba(74, 56, 214, 0.26);
+}
+
+#login-screen .login-card h1,
+#join-screen .login-card h1 {
+  color: #ffffff;
+}
+
+#login-screen .login-subtitle,
+#join-screen .login-subtitle {
+  color: rgba(226, 232, 240, 0.7);
+}
+
+#login-screen .form-group label,
+#join-screen .form-group label {
+  color: rgba(238, 242, 255, 0.88);
+}
+
+#login-screen .form-group input,
+#join-screen .form-group input {
+  border-color: rgba(255, 255, 255, 0.16);
+  background: rgba(3, 5, 16, 0.48);
+  color: #ffffff;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+#login-screen .form-group input::placeholder,
+#join-screen .form-group input::placeholder {
+  color: rgba(203, 213, 225, 0.52);
+}
+
+#login-screen .form-group input:focus,
+#join-screen .form-group input:focus {
+  border-color: rgba(151, 119, 255, 0.9);
+  box-shadow: 0 0 0 4px rgba(124, 92, 246, 0.15);
+}
+
+#login-screen .login-btn,
+#join-screen .login-btn {
+  min-height: 48px;
+  background: linear-gradient(135deg, #6552ef 0%, #7c3aed 55%, #3d7cf4 100%);
+  box-shadow: 0 16px 34px rgba(86, 61, 224, 0.35);
+}
+
+#login-screen .auth-secondary-btn,
+#join-screen .auth-secondary-btn {
+  color: #b9a7ff;
+}
+
+#login-screen .auth-secondary-btn:hover,
+#join-screen .auth-secondary-btn:hover {
+  color: #ffffff;
+}
+
+#login-screen .login-message,
+#join-screen .login-message {
+  color: rgba(226, 232, 240, 0.82);
+}
+
+#login-screen .login-message.success,
+#join-screen .login-message.success {
+  color: #86efac;
+}
+
+#login-screen .login-message.error,
+#join-screen .login-message.error {
+  color: #fca5a5;
+}
+
+.logo-box img,
+.login-logo img {
+  image-rendering: auto;
+}
+
+@keyframes taskify-loading-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 600px) {
+  .loading-video {
+    object-fit: contain;
+  }
+
+  #login-screen.login-screen,
+  #join-screen.login-screen {
+    padding: 18px;
+  }
+
+  #login-screen .login-card,
+  #join-screen .login-card {
+    padding: 28px 20px;
+    border-radius: 24px;
+  }
+
+  #login-screen .login-logo,
+  #join-screen .login-logo {
+    width: 96px;
+    height: 96px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .loading-screen {
+    transition: none;
+  }
+}
+
 html[data-theme="dark"] .mobile-menu-btn {
   background: #171717;
   border-color: #2a2a2a;

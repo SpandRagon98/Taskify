@@ -25,10 +25,13 @@ const WORKSPACE_THEMES = new Set([
 ]);
 const MAX_ATTACHMENT_SIZE = 750 * 1024;
 const MAX_VOICE_SIZE = 1200 * 1024;
+const INITIAL_LOADING_FALLBACK_MS = 13000;
 
 // -----------------------------
 // BASIC ELEMENTS
 // -----------------------------
+const loadingScreen = document.getElementById("loading-screen");
+const loadingVideo = document.getElementById("loading-video");
 const loginScreen = document.getElementById("login-screen");
 const joinScreen = document.getElementById("join-screen");
 const welcomeScreen = document.getElementById("welcome-screen");
@@ -359,6 +362,8 @@ let privateAttachmentPreviewUrls = [];
 let currentDriveFiles = [];
 let activeMeeting = null;
 let pendingMeetingFromHash = null;
+let initialLoadingResolved = false;
+let initialLoadingTimer = null;
 
 const defaultChatConversations = {};
 
@@ -366,15 +371,12 @@ const defaultChatConversations = {};
 // UI HELPERS
 // -----------------------------
 function showWelcomeScreen() {
-  closeMobileNav();
-  if (welcomeScreen) welcomeScreen.classList.remove("hidden");
-  if (loginScreen) loginScreen.classList.add("hidden");
-  if (joinScreen) joinScreen.classList.add("hidden");
-  if (appScreen) appScreen.classList.add("hidden");
+  showLoginScreen();
 }
 
 function showLoginScreen() {
   closeMobileNav();
+  if (loadingScreen) loadingScreen.classList.add("hidden");
   if (welcomeScreen) welcomeScreen.classList.add("hidden");
   if (loginScreen) loginScreen.classList.remove("hidden");
   if (joinScreen) joinScreen.classList.add("hidden");
@@ -383,6 +385,7 @@ function showLoginScreen() {
 
 function showJoinScreen() {
   closeMobileNav();
+  if (loadingScreen) loadingScreen.classList.add("hidden");
   if (welcomeScreen) welcomeScreen.classList.add("hidden");
   if (loginScreen) loginScreen.classList.add("hidden");
   if (joinScreen) joinScreen.classList.remove("hidden");
@@ -396,6 +399,7 @@ function showJoinScreen() {
 
 function showAppScreen() {
   closeMobileNav();
+  if (loadingScreen) loadingScreen.classList.add("hidden");
   if (welcomeScreen) welcomeScreen.classList.add("hidden");
   if (loginScreen) loginScreen.classList.add("hidden");
   if (joinScreen) joinScreen.classList.add("hidden");
@@ -403,6 +407,55 @@ function showAppScreen() {
   window.TeamDirectory?.ensureLoggedInMember?.(getUserFromLocalStorage());
   refreshTeamDirectoryUI();
   showDashboardSection();
+}
+
+function finishInitialLoading() {
+  if (initialLoadingResolved) return;
+  initialLoadingResolved = true;
+  if (initialLoadingTimer) window.clearTimeout(initialLoadingTimer);
+  initialLoadingTimer = null;
+  loadingVideo?.pause();
+
+  if (!loadingScreen) {
+    checkExistingLogin();
+    return;
+  }
+
+  loadingScreen.classList.add("is-fading");
+  window.setTimeout(() => {
+    loadingScreen.classList.add("hidden");
+    checkExistingLogin();
+  }, 320);
+}
+
+function beginInitialLoading() {
+  if (!loadingScreen || !loadingVideo) {
+    finishInitialLoading();
+    return;
+  }
+
+  loadingScreen.classList.remove("hidden", "is-fading", "video-unavailable");
+  if (welcomeScreen) welcomeScreen.classList.add("hidden");
+  if (loginScreen) loginScreen.classList.add("hidden");
+  if (joinScreen) joinScreen.classList.add("hidden");
+  if (appScreen) appScreen.classList.add("hidden");
+
+  loadingVideo.addEventListener("ended", finishInitialLoading, { once: true });
+  loadingVideo.addEventListener("error", () => {
+    loadingScreen.classList.add("video-unavailable");
+    window.setTimeout(finishInitialLoading, 700);
+  }, { once: true });
+
+  initialLoadingTimer = window.setTimeout(finishInitialLoading, INITIAL_LOADING_FALLBACK_MS);
+  const playPromise = loadingVideo.play();
+  if (playPromise?.catch) {
+    playPromise.catch(() => {
+      loadingScreen.classList.add("video-unavailable");
+      window.setTimeout(finishInitialLoading, 700);
+    });
+  }
+
+  if (loadingVideo.ended) finishInitialLoading();
 }
 
 function setMobileNavOpen(isOpen) {
@@ -3055,8 +3108,8 @@ function triggerBrowserNotification(title, message, options = {}) {
     const sourcePrefix = options.source ? `${options.source}: ` : "";
     const notification = new Notification(title, {
       body: `${sourcePrefix}${message}`.slice(0, 180),
-      icon: "assets/taskify-logo.svg",
-      badge: "assets/taskify-logo.svg",
+      icon: "assets/taskify-brand-logo.png",
+      badge: "assets/taskify-brand-logo.png",
       tag: options.eventId || `${options.type || "taskify"}-${title}`,
       renotify: false,
       silent: true,
@@ -4626,7 +4679,7 @@ setupNavigation();
 setupTaskifyEventChannel();
 setupPrivateChatChannel();
 setupPresenceTracking();
-checkExistingLogin();
+beginInitialLoading();
 applyRoleBasedUI();
 refreshTeamDirectoryUI();
 renderSelectedChatMessages();
