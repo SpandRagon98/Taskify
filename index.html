@@ -21,7 +21,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="icon" type="image/svg+xml" href="assets/taskify-logo.svg" />
-  <link rel="stylesheet" href="style.css?v=layout-cleanup-20260612" />
+  <link rel="stylesheet" href="style.css?v=responsive-help-20260613" />
 </head>
 <body>
   <!-- Welcome Screen -->
@@ -329,13 +329,6 @@
               </section>
             </div>
 
-            <section class="member-progress-section" aria-labelledby="member-progress-title">
-              <div class="member-progress-header">
-                <h4 id="member-progress-title" data-i18n="dashboard.teamPerformance">Team Performance</h4>
-                <span data-i18n="dashboard.completedTasks">Completed / assigned</span>
-              </div>
-              <div id="team-performance-list" class="member-progress-strip"></div>
-            </section>
           </div>
         </div>
       </section>
@@ -353,38 +346,36 @@
           </div>
 
           <div class="panel chat-shell-panel">
-            <div class="panel-header">
-              <div class="chat-layout">
-                <div class="chat-users" id="chat-users-list"></div>
+            <div class="chat-layout">
+              <div class="chat-users" id="chat-users-list"></div>
 
-                <div class="chat-window">
-                  <div class="chat-messages" id="chat-messages"></div>
+              <div class="chat-window">
+                <div class="chat-messages" id="chat-messages"></div>
 
-                  <div id="chat-typing-indicator" class="chat-typing-indicator hidden"></div>
-                  <div id="chat-attachment-preview" class="composer-attachment-preview hidden"></div>
+                <div id="chat-typing-indicator" class="chat-typing-indicator hidden"></div>
+                <div id="chat-attachment-preview" class="composer-attachment-preview hidden"></div>
 
-                  <div class="chat-input-row">
-                    <input type="file" id="chat-file-input" class="hidden" />
-                    <button class="secondary-btn chat-tool-btn attachment-tool-btn" type="button" id="chat-attach-btn" aria-label="Attach file" title="Attach file" data-i18n-title="chat.attachFile">
-                      <svg class="composer-icon" viewBox="0 0 24 24" aria-hidden="true">
-                        <path d="M21.4 11.2 12.2 20.4a6 6 0 0 1-8.5-8.5l9.2-9.2a4 4 0 1 1 5.7 5.7l-9.1 9.1a2 2 0 0 1-2.9-2.9l8.5-8.5" />
-                      </svg>
-                    </button>
-                    <button class="secondary-btn chat-tool-btn voice-tool-btn" type="button" id="chat-record-btn" aria-label="Record voice message" title="Record voice message" data-i18n-title="chat.recordVoice">
-                      <svg class="composer-icon" viewBox="0 0 24 24" aria-hidden="true">
-                        <path d="M12 14a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v5a3 3 0 0 0 3 3Z" />
-                        <path d="M18 11a6 6 0 0 1-12 0M12 17v4M9 21h6" />
-                      </svg>
-                    </button>
-                    <input type="text" id="chat-message-input" placeholder="Type your message..." data-i18n-placeholder="chat.inputPlaceholder" />
-                    <button class="primary-btn" id="send-message-btn" data-i18n="actions.send">Send</button>
-                  </div>
-                  <div id="chat-voice-panel" class="voice-panel hidden">
-                    <span id="chat-voice-status">Recording...</span>
-                    <button type="button" class="secondary-btn" id="chat-stop-record-btn">Stop</button>
-                    <button type="button" class="secondary-btn hidden" id="chat-send-voice-btn">Send Voice</button>
-                    <button type="button" class="danger-btn" id="chat-cancel-record-btn">Cancel</button>
-                  </div>
+                <div class="chat-input-row">
+                  <input type="file" id="chat-file-input" class="hidden" />
+                  <button class="secondary-btn chat-tool-btn attachment-tool-btn" type="button" id="chat-attach-btn" aria-label="Attach file" title="Attach file" data-i18n-title="chat.attachFile">
+                    <svg class="composer-icon" viewBox="0 0 24 24" aria-hidden="true">
+                      <path d="M21.4 11.2 12.2 20.4a6 6 0 0 1-8.5-8.5l9.2-9.2a4 4 0 1 1 5.7 5.7l-9.1 9.1a2 2 0 0 1-2.9-2.9l8.5-8.5" />
+                    </svg>
+                  </button>
+                  <button class="secondary-btn chat-tool-btn voice-tool-btn" type="button" id="chat-record-btn" aria-label="Record voice message" title="Record voice message" data-i18n-title="chat.recordVoice">
+                    <svg class="composer-icon" viewBox="0 0 24 24" aria-hidden="true">
+                      <path d="M12 14a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v5a3 3 0 0 0 3 3Z" />
+                      <path d="M18 11a6 6 0 0 1-12 0M12 17v4M9 21h6" />
+                    </svg>
+                  </button>
+                  <input type="text" id="chat-message-input" placeholder="Type your message..." data-i18n-placeholder="chat.inputPlaceholder" />
+                  <button class="primary-btn" id="send-message-btn" data-i18n="actions.send">Send</button>
+                </div>
+                <div id="chat-voice-panel" class="voice-panel hidden">
+                  <span id="chat-voice-status">Recording...</span>
+                  <button type="button" class="secondary-btn" id="chat-stop-record-btn">Stop</button>
+                  <button type="button" class="secondary-btn hidden" id="chat-send-voice-btn">Send Voice</button>
+                  <button type="button" class="danger-btn" id="chat-cancel-record-btn">Cancel</button>
                 </div>
               </div>
             </div>
@@ -907,8 +898,8 @@
                 </button>
                 <div class="settings-category-details">
                   <div class="settings-actions-row">
-                    <button class="secondary-btn" type="button" data-i18n="actions.contactSupport">Contact Support</button>
-                    <button class="secondary-btn" type="button" data-i18n="actions.sendFeedback">Send Feedback</button>
+                    <button class="secondary-btn" id="contact-support-btn" type="button" data-i18n="actions.contactSupport">Contact Support</button>
+                    <button class="secondary-btn" id="send-feedback-btn" type="button" data-i18n="actions.sendFeedback">Send Feedback</button>
                   </div>
                 </div>
               </div>
@@ -1012,12 +1003,55 @@
     </div>
   </div>
 
+  <div id="support-modal-overlay" class="modal-overlay help-modal-overlay hidden">
+    <div class="help-modal" role="dialog" aria-modal="true" aria-labelledby="support-modal-title">
+      <div class="help-modal-header">
+        <div>
+          <h3 id="support-modal-title" data-i18n="settings.support.title">Contact & Support</h3>
+          <p data-i18n="settings.support.subtitle">Taskify support is available by phone.</p>
+        </div>
+        <button type="button" class="close-modal-btn help-modal-close" id="close-support-modal-btn" aria-label="Close">&times;</button>
+      </div>
+      <div class="support-contact-card">
+        <p data-i18n="settings.support.message">For support, contact: (+91) 7439165290</p>
+        <a class="primary-btn support-call-link" href="tel:+917439165290" data-i18n="actions.callNow">Call Now</a>
+      </div>
+    </div>
+  </div>
+
+  <div id="feedback-modal-overlay" class="modal-overlay help-modal-overlay hidden">
+    <div class="help-modal feedback-modal" role="dialog" aria-modal="true" aria-labelledby="feedback-modal-title">
+      <div class="help-modal-header">
+        <div>
+          <h3 id="feedback-modal-title" data-i18n="settings.feedback.title">Send Feedback</h3>
+          <p data-i18n="settings.feedback.subtitle">Share an idea or tell us what could work better.</p>
+        </div>
+        <button type="button" class="close-modal-btn help-modal-close" id="close-feedback-modal-btn" aria-label="Close">&times;</button>
+      </div>
+      <form id="feedback-form" class="feedback-form">
+        <div class="form-group">
+          <label for="feedback-subject" data-i18n="settings.feedback.subject">Subject</label>
+          <input type="text" id="feedback-subject" maxlength="120" required />
+        </div>
+        <div class="form-group">
+          <label for="feedback-message" data-i18n="settings.feedback.message">Message</label>
+          <textarea id="feedback-message" rows="6" maxlength="2000" required></textarea>
+        </div>
+        <p id="feedback-form-status" class="feedback-form-status" aria-live="polite"></p>
+        <div class="help-modal-actions">
+          <button type="button" class="secondary-btn" id="cancel-feedback-btn" data-i18n="actions.cancel">Cancel</button>
+          <button type="submit" class="primary-btn" data-i18n="actions.submitFeedback">Submit Feedback</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <div id="toast-container" class="toast-container"></div>
-  <script src="translations.js?v=premium-themes-20260612"></script>
+  <script src="translations.js?v=responsive-help-20260613"></script>
   <script src="auth-config.js?v=credential-email-live-20260612"></script>
   <script src="auth.js?v=credential-email-live-20260612"></script>
   <script src="team-groups.js?v=user-id-auth-20260610"></script>
-  <script src="script.js?v=layout-cleanup-20260612"></script>
+  <script src="script.js?v=responsive-help-20260613"></script>
   <script src="group-chat.js?v=user-id-auth-20260610"></script>
   <script src="calendar.js?v=settings-language-20260424"></script>
 </body>

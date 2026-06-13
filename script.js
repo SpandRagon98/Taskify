@@ -1,6 +1,7 @@
 const APP_STORAGE_VERSION = "taskify-client-clean-2026-04-26";
 const SETTINGS_PREFERENCES_KEY = "ttm_settings_preferences";
 const SIDEBAR_COLLAPSE_KEY = "taskify-sidebar-collapsed";
+const FEEDBACK_STORAGE_KEY = "ttm_feedback";
 const WORKSPACE_THEME_FALLBACK_KEY = "taskify-theme";
 const DEFAULT_WORKSPACE_THEME = "taskify-purple";
 const WORKSPACE_THEMES = new Set([
@@ -119,7 +120,6 @@ const overdueTrendCount = document.getElementById("overdue-trend-count");
 const teamContributionDonut = document.getElementById("team-contribution-donut");
 const teamContributionTotal = document.getElementById("team-contribution-total");
 const teamContributionLegend = document.getElementById("team-contribution-legend");
-const teamPerformanceList = document.getElementById("team-performance-list");
 const driveFileGrid = document.getElementById("drive-file-grid");
 
 // -----------------------------
@@ -160,6 +160,17 @@ const settingsChatTypingToggle = document.getElementById("settings-chat-typing-t
 const settingsChatPreviewsToggle = document.getElementById("settings-chat-previews-toggle");
 const settingsCameraToggle = document.getElementById("settings-camera-toggle");
 const settingsMicrophoneToggle = document.getElementById("settings-microphone-toggle");
+const contactSupportBtn = document.getElementById("contact-support-btn");
+const sendFeedbackBtn = document.getElementById("send-feedback-btn");
+const supportModalOverlay = document.getElementById("support-modal-overlay");
+const feedbackModalOverlay = document.getElementById("feedback-modal-overlay");
+const closeSupportModalBtn = document.getElementById("close-support-modal-btn");
+const closeFeedbackModalBtn = document.getElementById("close-feedback-modal-btn");
+const cancelFeedbackBtn = document.getElementById("cancel-feedback-btn");
+const feedbackForm = document.getElementById("feedback-form");
+const feedbackSubjectInput = document.getElementById("feedback-subject");
+const feedbackMessageInput = document.getElementById("feedback-message");
+const feedbackFormStatus = document.getElementById("feedback-form-status");
 const teamMembersList = document.getElementById("team-members-list");
 const teamMemberForm = document.getElementById("team-member-form");
 const teamMemberNameInput = document.getElementById("team-member-name");
@@ -644,6 +655,84 @@ function showToast(title, message) {
     toast.style.transform = "translateX(18px)";
     setTimeout(() => toast.remove(), 250);
   }, 3500);
+}
+
+function setFeedbackFormStatus(message = "", type = "") {
+  if (!feedbackFormStatus) return;
+  feedbackFormStatus.textContent = message;
+  feedbackFormStatus.className = "feedback-form-status";
+  if (type) feedbackFormStatus.classList.add(type);
+}
+
+function setHelpModalOpen(modal, isOpen, focusTarget) {
+  if (!modal) return;
+
+  modal.classList.toggle("hidden", !isOpen);
+  document.body.classList.toggle(
+    "help-modal-open",
+    Boolean(
+      (supportModalOverlay && !supportModalOverlay.classList.contains("hidden"))
+      || (feedbackModalOverlay && !feedbackModalOverlay.classList.contains("hidden"))
+    )
+  );
+
+  if (isOpen && focusTarget) {
+    window.setTimeout(() => focusTarget.focus(), 0);
+  }
+}
+
+function closeSupportModal() {
+  setHelpModalOpen(supportModalOverlay, false);
+}
+
+function closeFeedbackModal() {
+  setHelpModalOpen(feedbackModalOverlay, false);
+  setFeedbackFormStatus();
+}
+
+function getFeedbackEntries() {
+  try {
+    const entries = JSON.parse(localStorage.getItem(FEEDBACK_STORAGE_KEY) || "[]");
+    return Array.isArray(entries) ? entries : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveFeedbackEntry(subject, message) {
+  const user = getUserFromLocalStorage() || {};
+  const entries = getFeedbackEntries().slice(-99);
+  entries.push({
+    id: `feedback-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    subject,
+    message,
+    userId: user.userId || "",
+    name: user.name || "",
+    email: user.email || "",
+    createdAt: new Date().toISOString()
+  });
+  localStorage.setItem(FEEDBACK_STORAGE_KEY, JSON.stringify(entries));
+}
+
+function handleFeedbackSubmit(event) {
+  event?.preventDefault?.();
+  const subject = feedbackSubjectInput?.value.trim() || "";
+  const message = feedbackMessageInput?.value.trim() || "";
+
+  if (!subject || !message) {
+    setFeedbackFormStatus(t("settings.feedback.required"), "error");
+    (!subject ? feedbackSubjectInput : feedbackMessageInput)?.focus();
+    return;
+  }
+
+  try {
+    saveFeedbackEntry(subject, message);
+    feedbackForm?.reset();
+    setFeedbackFormStatus(t("settings.feedback.success"), "success");
+    showToast(t("settings.feedback.successTitle"), t("settings.feedback.success"));
+  } catch {
+    setFeedbackFormStatus(t("settings.feedback.error"), "error");
+  }
 }
 
 // -----------------------------
@@ -3174,21 +3263,6 @@ function updateDashboardInsights() {
 
   const analytics = getTeamAnalytics(tasks);
   renderTeamContribution(analytics);
-  renderTeamInsightList(teamPerformanceList, analytics, (item, index) => {
-    const progress = Math.min(100, Math.max(0, Number(item.productivity) || 0));
-    const assigneeLabel = item.name || `Assignee ${index + 1}`;
-
-    return `
-      <article class="member-progress-card" style="--member-color:${item.color};--score:${progress};">
-        <h5>${escapeHTML(assigneeLabel)}</h5>
-        <div class="member-progress-donut" role="img" aria-label="${escapeHTML(t("dashboard.doneLabel", { percent: progress }))}">
-          <span>${progress}%</span>
-        </div>
-        <strong>${escapeHTML(t("dashboard.doneLabel", { percent: progress }))}</strong>
-        <p>${escapeHTML(t("dashboard.tasksCompletedSummary", { completed: item.completed, assigned: item.assigned }))}</p>
-      </article>
-    `;
-  });
 }
 
 function renderAllTaskUI() {
@@ -3519,6 +3593,33 @@ settingsCategoryCards.forEach((card) => {
   trigger.addEventListener("click", () => {
     const isOpen = card.classList.toggle("is-open");
     trigger.setAttribute("aria-expanded", isOpen ? "true" : "false");
+  });
+});
+
+if (contactSupportBtn) {
+  contactSupportBtn.addEventListener("click", () => {
+    setHelpModalOpen(supportModalOverlay, true, closeSupportModalBtn);
+  });
+}
+
+if (sendFeedbackBtn) {
+  sendFeedbackBtn.addEventListener("click", () => {
+    setFeedbackFormStatus();
+    setHelpModalOpen(feedbackModalOverlay, true, feedbackSubjectInput);
+  });
+}
+
+if (closeSupportModalBtn) closeSupportModalBtn.addEventListener("click", closeSupportModal);
+if (closeFeedbackModalBtn) closeFeedbackModalBtn.addEventListener("click", closeFeedbackModal);
+if (cancelFeedbackBtn) cancelFeedbackBtn.addEventListener("click", closeFeedbackModal);
+if (feedbackForm) feedbackForm.addEventListener("submit", handleFeedbackSubmit);
+
+[supportModalOverlay, feedbackModalOverlay].forEach((overlay) => {
+  if (!overlay) return;
+  overlay.addEventListener("click", (event) => {
+    if (event.target !== overlay) return;
+    if (overlay === supportModalOverlay) closeSupportModal();
+    if (overlay === feedbackModalOverlay) closeFeedbackModal();
   });
 });
 
@@ -4000,7 +4101,10 @@ if (sidebarCollapseBtn) {
 }
 
 document.addEventListener("keydown", (event) => {
-  if (event.key === "Escape") closeMobileNav();
+  if (event.key !== "Escape") return;
+  closeMobileNav();
+  closeSupportModal();
+  closeFeedbackModal();
 });
 
 const mobileNavMedia = window.matchMedia?.("(min-width: 1025px)");
