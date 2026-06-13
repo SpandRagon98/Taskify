@@ -25,7 +25,7 @@ const WORKSPACE_THEMES = new Set([
 ]);
 const MAX_ATTACHMENT_SIZE = 750 * 1024;
 const MAX_VOICE_SIZE = 1200 * 1024;
-const INITIAL_LOADING_DURATION_MS = 2400;
+const INITIAL_LOADING_DURATION_MS = 4200;
 
 // -----------------------------
 // BASIC ELEMENTS
@@ -350,6 +350,9 @@ let appEventChannel = null;
 let notificationAudio = null;
 let ringtoneAudio = null;
 let audioPrimed = false;
+let audioPrimePromise = null;
+let pendingNotificationSound = false;
+let notificationServiceWorkerPromise = null;
 let runtimeUserIdentity = null;
 let activeRingtoneEventId = "";
 let incomingCallEvent = null;
@@ -540,6 +543,7 @@ function isNotificationSoundEnabled() {
 
 function setNotificationSoundEnabled(value) {
   localStorage.setItem("ttm_notification_sound_enabled", value ? "true" : "false");
+  if (!value) pendingNotificationSound = false;
 }
 
 function getSavedTheme() {
@@ -710,19 +714,26 @@ function getRingtoneAudio() {
   return ringtoneAudio;
 }
 
-function safelyPlayAudio(audio, restart = true) {
-  if (!audio) return;
+async function safelyPlayAudio(audio, restart = true) {
+  if (!audio) return false;
   try {
     if (restart) audio.currentTime = 0;
-    const playPromise = audio.play();
-    if (playPromise?.catch) playPromise.catch(() => {});
-  } catch {}
+    await audio.play();
+    return true;
+  } catch {
+    return false;
+  }
 }
 
-function playNotificationSound(eventId = "") {
+async function playNotificationSound(eventId = "") {
   if (!isNotificationSoundEnabled()) return;
   if (eventId && !claimEventId(notificationEventIds, `sound:${eventId}`)) return;
-  safelyPlayAudio(getNotificationAudio());
+  if (audioPrimePromise) await audioPrimePromise;
+  const played = await safelyPlayAudio(getNotificationAudio());
+  if (!played) {
+    pendingNotificationSound = true;
+    audioPrimed = false;
+  }
 }
 
 function stopRingtone() {
@@ -732,36 +743,78 @@ function stopRingtone() {
   ringtoneAudio.currentTime = 0;
 }
 
-function startRingtone(eventId) {
+async function startRingtone(eventId) {
   if (!isNotificationSoundEnabled()) return;
   if (activeRingtoneEventId === eventId && !getRingtoneAudio().paused) return;
   stopRingtone();
   activeRingtoneEventId = eventId || "incoming-call";
-  safelyPlayAudio(getRingtoneAudio());
+  if (audioPrimePromise) await audioPrimePromise;
+  const played = await safelyPlayAudio(getRingtoneAudio());
+  if (!played) audioPrimed = false;
 }
 
-function primeNotificationAudio() {
-  if (audioPrimed) return;
-  audioPrimed = true;
-  [getNotificationAudio(), getRingtoneAudio()].forEach((audio) => {
-    const originalVolume = audio.volume;
-    audio.volume = 0;
-    const playPromise = audio.play();
-    if (!playPromise?.then) {
-      audio.pause();
-      audio.currentTime = 0;
-      audio.volume = originalVolume;
-      return;
+async function primeAudioElement(audio) {
+  const originalVolume = audio.volume;
+  audio.volume = 0;
+  try {
+    await audio.play();
+    audio.pause();
+    audio.currentTime = 0;
+    return true;
+  } catch {
+    return false;
+  } finally {
+    audio.volume = originalVolume;
+  }
+}
+
+async function primeNotificationAudio() {
+  if (audioPrimed) return true;
+  if (audioPrimePromise) return audioPrimePromise;
+
+  audioPrimePromise = Promise.all([
+    primeAudioElement(getNotificationAudio()),
+    primeAudioElement(getRingtoneAudio())
+  ]).then(([notificationReady, ringtoneReady]) => {
+    audioPrimed = notificationReady && ringtoneReady;
+    if (notificationReady && pendingNotificationSound && isNotificationSoundEnabled()) {
+      pendingNotificationSound = false;
+      safelyPlayAudio(getNotificationAudio());
     }
-    playPromise
-      .then(() => {
-        audio.pause();
-        audio.currentTime = 0;
-        audio.volume = originalVolume;
-      })
-      .catch(() => {
-        audio.volume = originalVolume;
-      });
+    return audioPrimed;
+  }).finally(() => {
+    audioPrimePromise = null;
+  });
+
+  return audioPrimePromise;
+}
+
+function handleAudioUnlockInteraction() {
+  primeNotificationAudio().then((unlocked) => {
+    if (!unlocked) return;
+    document.removeEventListener("pointerdown", handleAudioUnlockInteraction, true);
+    document.removeEventListener("keydown", handleAudioUnlockInteraction, true);
+  });
+}
+
+function registerNotificationServiceWorker() {
+  if (!("serviceWorker" in navigator)) return Promise.resolve(null);
+  if (!window.isSecureContext) return Promise.resolve(null);
+  if (notificationServiceWorkerPromise) return notificationServiceWorkerPromise;
+
+  notificationServiceWorkerPromise = navigator.serviceWorker
+    .register("taskify-notification-sw.js")
+    .catch(() => null);
+  return notificationServiceWorkerPromise;
+}
+
+function setupNotificationServiceWorker() {
+  registerNotificationServiceWorker();
+  if (!("serviceWorker" in navigator)) return;
+
+  navigator.serviceWorker.addEventListener("message", (event) => {
+    if (event.data?.type !== "taskify-notification-click") return;
+    focusTaskifySection(event.data.sectionId || "");
   });
 }
 
@@ -3080,26 +3133,36 @@ function disableBrowserNotifications() {
   showToast(t("notifications.disabledTitle"), t("notifications.disabledBody"));
 }
 
-function triggerBrowserNotification(title, message, options = {}) {
+async function triggerBrowserNotification(title, message, options = {}) {
   // GitHub Pages can notify from an open/background tab; closed-app push needs a push backend.
   if (!("Notification" in window)) return;
   if (Notification.permission !== "granted") return;
   if (!isBrowserNotificationEnabled()) return;
   if (document.visibilityState === "visible" && document.hasFocus()) return;
 
+  const sourcePrefix = options.source ? `${options.source}: ` : "";
+  const notificationOptions = {
+    body: `${sourcePrefix}${message}`.slice(0, 180),
+    icon: "assets/taskify-brand-logo.png",
+    badge: "assets/taskify-brand-logo.png",
+    tag: options.eventId || `${options.type || "taskify"}-${title}`,
+    renotify: false,
+    silent: true,
+    data: {
+      sectionId: options.sectionId || ""
+    }
+  };
+
   try {
-    const sourcePrefix = options.source ? `${options.source}: ` : "";
-    const notification = new Notification(title, {
-      body: `${sourcePrefix}${message}`.slice(0, 180),
-      icon: "assets/taskify-brand-logo.png",
-      badge: "assets/taskify-brand-logo.png",
-      tag: options.eventId || `${options.type || "taskify"}-${title}`,
-      renotify: false,
-      silent: true,
-      data: {
-        sectionId: options.sectionId || ""
-      }
-    });
+    const registration = await registerNotificationServiceWorker();
+    if (registration?.showNotification) {
+      await registration.showNotification(title, notificationOptions);
+      return;
+    }
+  } catch {}
+
+  try {
+    const notification = new Notification(title, notificationOptions);
     notification.onclick = () => {
       focusTaskifySection(notification.data?.sectionId);
       notification.close();
@@ -4596,8 +4659,8 @@ if (mobileSidebarOverlay) {
 if (answerIncomingCallBtn) answerIncomingCallBtn.addEventListener("click", answerIncomingCall);
 if (declineIncomingCallBtn) declineIncomingCallBtn.addEventListener("click", declineIncomingCall);
 
-document.addEventListener("pointerdown", primeNotificationAudio, { once: true, capture: true });
-document.addEventListener("keydown", primeNotificationAudio, { once: true, capture: true });
+document.addEventListener("pointerdown", handleAudioUnlockInteraction, true);
+document.addEventListener("keydown", handleAudioUnlockInteraction, true);
 
 window.addEventListener("pagehide", () => {
   stopRingtone();
@@ -4659,6 +4722,7 @@ applyTheme(getSavedTheme());
 applyWorkspaceTheme(getSavedWorkspaceTheme(), { persist: false });
 setSidebarCollapsed(getSavedSidebarCollapsed(), { persist: false });
 setupNavigation();
+setupNotificationServiceWorker();
 setupTaskifyEventChannel();
 setupPrivateChatChannel();
 setupPresenceTracking();

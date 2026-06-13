@@ -22,7 +22,8 @@
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="icon" type="image/png" href="assets/taskify-brand-logo.png" />
   <link rel="apple-touch-icon" href="assets/taskify-brand-logo.png" />
-  <link rel="stylesheet" href="style.css?v=brand-settings-20260613" />
+  <link rel="preload" href="assets/sounds/notification.mp3" as="audio" type="audio/mpeg" />
+  <link rel="stylesheet" href="style.css?v=notification-loading-20260613" />
 </head>
 <body>
   <!-- Premium startup screen -->
@@ -30,6 +31,7 @@
     <div class="startup-brand" aria-hidden="true">
       <img src="assets/taskify-brand-logo.png" alt="" />
       <span>Taskify</span>
+      <div class="startup-progress"><span></span></div>
     </div>
   </div>
 
@@ -1065,12 +1067,12 @@
   </div>
 
   <div id="toast-container" class="toast-container"></div>
-  <script src="translations.js?v=brand-settings-20260613"></script>
+  <script src="translations.js?v=notification-loading-20260613"></script>
   <script src="auth-config.js?v=credential-email-live-20260612"></script>
   <script src="auth.js?v=credential-email-live-20260612"></script>
   <script src="team-groups.js?v=user-id-auth-20260610"></script>
-  <script src="script.js?v=brand-settings-20260613"></script>
-  <script src="group-chat.js?v=brand-settings-20260613"></script>
-  <script src="calendar.js?v=brand-settings-20260613"></script>
+  <script src="script.js?v=notification-loading-20260613"></script>
+  <script src="group-chat.js?v=notification-loading-20260613"></script>
+  <script src="calendar.js?v=notification-loading-20260613"></script>
 </body>
 </html>
